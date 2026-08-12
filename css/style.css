@@ -37,8 +37,8 @@
   --font-ui: 'Istok Web', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* UI */
   --font-mono: 'SF Mono', Consolas, monospace;
   --content-w: 680px;
-  --topbar-h: 52px;
-  --bottomnav-h: 56px;
+  --topbar-h: 83px;
+  --bottomnav-h: 0px;
   --fs: 1.15rem;
   --lh: 1.55;
   --radius: 12px;
@@ -180,19 +180,40 @@ button { font-family: var(--font-ui); cursor: pointer; border: none; background:
 /* =============================================
    TOPBAR
    ============================================= */
-.topbar { position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-h); background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 .8em; z-index: 200; gap: .6em; backdrop-filter: blur(10px); background: rgba(248,248,245,.9); }
-[data-theme="dark"] .topbar { background: rgba(23,20,18,.9); }
+.topbar { position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-h); background: #fff; border-bottom: 1px solid var(--grey25); display: flex; align-items: center; padding: 0 34px; z-index: 200; gap: 24px; }
+[data-theme="dark"] .topbar { background: var(--surface); border-color: var(--border); }
 .topbar-left { flex-shrink: 0; }
+.topbar-logo { font-family: var(--font-ui); font-size: 1.75rem; font-weight: 700; letter-spacing: -.02em; color: var(--text); cursor: pointer; text-decoration: none; flex-shrink: 0; }
 .topbar-title { font-family: var(--font-ui); font-size: .85rem; font-weight: 700; color: var(--accent); cursor: pointer; }
-.topbar-search { flex: 1; display: flex; align-items: center; gap: .4em; padding: .4em .8em; background: var(--border-light); border-radius: 20px; color: var(--text-3); font-size: .85rem; transition: background var(--transition); }
-.topbar-search:hover { background: var(--border); }
+.topbar-search { flex: 0 1 354px; display: flex; align-items: center; gap: .5em; height: 39px; padding: 0 16px; background: #fff; border: 1px solid var(--grey25); border-radius: 10px; color: var(--text-3); font-size: .95rem; transition: border-color var(--transition); }
+.topbar-search:hover { border-color: var(--grey50); }
+.topnav { display: flex; align-items: center; gap: 28px; margin-left: 4px; overflow-x: auto; scrollbar-width: none; }
+.topnav::-webkit-scrollbar { display: none; }
+.topnav-item { font-family: var(--font-ui); font-size: .9rem; text-transform: uppercase; letter-spacing: .02em; color: var(--text); white-space: nowrap; padding: 4px 0; border-bottom: 2px solid transparent; transition: color var(--transition), border-color var(--transition); }
+.topnav-item:hover { color: var(--violet); }
+.topnav-item.active { color: var(--violet); border-bottom-color: var(--violet); }
+.topbar-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--grey25), var(--grey50)); flex-shrink: 0; border: none; cursor: pointer; }
 .search-placeholder { font-family: var(--font-ui); }
-.topbar-right { display: flex; align-items: center; gap: .4em; flex-shrink: 0; }
+.topbar-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; margin-left: auto; }
 .topbar-icon { font-size: 1.1rem; padding: .3em; color: var(--text-2); border-radius: 6px; }
 .topbar-icon:hover { background: var(--border-light); }
 /* XP badge in topbar */
-.xp-badge { font-family: var(--font-ui); font-size: .72rem; font-weight: 800; padding: .25em .7em; border-radius: 14px; background: linear-gradient(135deg, var(--accent), #EC4899); color: #fff; cursor: pointer; transition: all var(--transition); box-shadow: 0 2px 8px rgba(124,58,237,.25); }
-.xp-badge:hover { transform: scale(1.08); box-shadow: 0 3px 12px rgba(124,58,237,.35); }
+.xp-badge { display: inline-flex; align-items: center; gap: 8px; background: none; box-shadow: none; padding: 0; border: none; cursor: pointer; }
+.xp-badge:hover { transform: none; box-shadow: none; }
+.xp-badge .pb-pill-level, .xp-badge .pb-pill-xp { font-family: var(--font-ui); font-size: .8rem; font-weight: 700; color: #fff; padding: 5px 12px; border-radius: 10px; white-space: nowrap; }
+.xp-badge .pb-pill-level { background: var(--gradient-1); }
+.xp-badge .pb-pill-xp { background: var(--pink); }
+/* Top bar na mobilu: logo + hledání + pilulky/avatar na řádku 1, menu na řádku 2 */
+@media (max-width: 860px) {
+  :root { --topbar-h: 108px; }
+  .topbar { flex-wrap: wrap; align-content: center; padding: 8px 14px; gap: 10px 14px; }
+  .topbar-logo { font-size: 1.4rem; }
+  .topbar-search { flex: 1 1 120px; height: 34px; font-size: .85rem; }
+  .topnav { order: 5; flex-basis: 100%; gap: 20px; margin-left: 0; }
+  .topbar-right { gap: 8px; }
+  .xp-badge .pb-pill-level, .xp-badge .pb-pill-xp { font-size: .7rem; padding: 4px 8px; }
+  .topbar-avatar { width: 34px; height: 34px; }
+}
 
 /* XP toast notification */
 .xp-toast { position: fixed; top: calc(var(--topbar-h) + .5em); right: .8em; font-family: var(--font-ui); font-size: .8rem; font-weight: 700; padding: .4em .8em; border-radius: 10px; color: #fff; z-index: 500; opacity: 0; transform: translateY(-10px); transition: all .3s ease; pointer-events: none; }
@@ -250,7 +271,7 @@ textarea.cert-input { resize: vertical; line-height: 1.4; }
 /* =============================================
    BOTTOM NAV
    ============================================= */
-.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--bottomnav-h); background: var(--surface); border-top: 1px solid var(--border); display: flex; z-index: 200; padding-bottom: env(safe-area-inset-bottom); }
+.bottom-nav { display: none !important; }
 .tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15em; color: var(--text-3); transition: color var(--transition); }
 .tab.active { color: var(--accent); }
 .tab-icon { font-size: 1.2rem; }

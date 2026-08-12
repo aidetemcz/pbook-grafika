@@ -1196,13 +1196,13 @@ class PBook {
   // ===== ONBOARDING TOUR =====
   startTour() {
     this._tourSteps = [
-      { target: '.tab[data-view="home"]', text: "\u{1F3E0} Tohle je tvůj Domov! Je to jako Netflix, ale na učení. Prohlédni si to a vyber, co tě zaujme.", pos: 'top' },
-      { target: '.tab[data-view="read"]', text: "\u{1F4F1} Feed! Prostě scrolluj — appka zjistí, co ti ukázat dál. Jako TikTok, ale doopravdy se něco naučíš.", pos: 'top' },
-      { target: '.tab[data-view="glossary"]', text: "\u{1F3AF} Mise! Každá je výprava s příběhem a závěrečným bossem — kvízem. Poraz bosse = získej titul!", pos: 'top' },
-      { target: '.tab[data-view="map"]', text: "\u{1F5FA} Mapa! Podívej se na celou knihu, uložené věci a poznámky. Klepni na kapitolu a skoč tam.", pos: 'top' },
-      { target: '.tab[data-view="quiz"]', text: "\u{1F9E0} Kvíz! Otestuj, co si pamatuješ. Kartičky jsou chytré — těžké se vrací častěji, snadné méně.", pos: 'top' },
+      { target: '.topnav-item[data-view="home"]', text: "\u{1F3E0} Tohle je tvůj Domov! Je to jako Netflix, ale na učení. Prohlédni si to a vyber, co tě zaujme.", pos: 'bottom' },
+      { target: '.topnav-item[data-view="read"]', text: "\u{1F4F1} Feed! Prostě scrolluj — appka zjistí, co ti ukázat dál. Jako TikTok, ale doopravdy se něco naučíš.", pos: 'bottom' },
+      { target: '.topnav-item[data-view="glossary"]', text: "\u{1F3AF} Mise! Každá je výprava s příběhem a závěrečným bossem — kvízem. Poraz bosse = získej titul!", pos: 'bottom' },
+      { target: '.topnav-item[data-view="map"]', text: "\u{1F5FA} Mapa! Podívej se na celou knihu, uložené věci a poznámky. Klepni na kapitolu a skoč tam.", pos: 'bottom' },
+      { target: '.topnav-item[data-view="quiz"]', text: "\u{1F9E0} Kvíz! Otestuj, co si pamatuješ. Kartičky jsou chytré — těžké se vrací častěji, snadné méně.", pos: 'bottom' },
       { target: '#xpBadge', text: "\u{1F31F} Tohle je tvůj level! Získáváš XP za čtení, mini-hry a dokončení misí. Leveluj a odemkni skvělé motivy!", pos: 'bottom' },
-      { target: null, text: "Vše je připraveno! Klepni na cokoliv, co vypadá zajímavě. Tuhle knihu nejde číst špatně. Když se ztratíš, klepni nahoře na \"p-book\" a vrátíš se sem. JDEME! \u{1F680}", pos: 'center' },
+      { target: null, text: "Vše je připraveno! Klepni na cokoliv, co vypadá zajímavě. Tuhle knihu nejde číst špatně. Když se ztratíš, klepni nahoře na \"pbook\" a vrátíš se sem. JDEME! \u{1F680}", pos: 'center' },
     ];
     this._tourIdx = 0;
     this._showTourStep();
@@ -1345,8 +1345,8 @@ class PBook {
     const viewEl = document.getElementById(`view-${view}`);
     if (viewEl) viewEl.classList.add('active');
 
-    // Update tab highlights
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
+    // Update tab highlights (bottom-nav legacy + new top-nav)
+    document.querySelectorAll('.tab, .topnav-item').forEach(t => t.classList.toggle('active', t.dataset.view === view));
     // Clear hash to prevent deep-link re-triggering on tab click
     if (!auto && window.location.hash) history.replaceState(null, '', window.location.pathname);
 
@@ -6526,15 +6526,20 @@ class PBook {
     el.style.display = '';
     const reward = this.getLevelRewards().filter(r => r.level <= this.user.level).pop();
     const editor = this.getEditorTrack?.().tier === 'editor' ? '🛠 ' : '';
-    el.textContent = editor + (reward?.icon || '') + ' Úr. ' + this.user.level + ' · ' + this.user.xp + ' XP';
+    const lvlText = editor + (reward?.icon ? reward.icon + ' ' : '') + 'Úroveň ' + this.user.level;
+    el.innerHTML = `<span class="pb-pill-level"></span><span class="pb-pill-xp"></span>`;
+    el.querySelector('.pb-pill-level').textContent = lvlText;
+    el.querySelector('.pb-pill-xp').textContent = this.user.xp + ' XP';
     el.title = editor ? 'Redaktor — vysloužený přijatými příspěvky' : '';
     // Apply cosmetic theme
     this._applyLevelTheme();
-    // Update quiz tab badge
-    const quizTab = document.querySelector('.tab[data-view="quiz"] .tab-label');
-    if (quizTab && this._f('spaceRepetition')) {
+    // Update quiz menu badge (top-nav + legacy bottom-nav label)
+    if (this._f('spaceRepetition')) {
       const dueCount = this.user.getDueRecalls().length;
-      quizTab.textContent = dueCount > 0 ? `Kvíz (${dueCount})` : 'Kvíz';
+      const quizItem = document.querySelector('.topnav-item[data-view="quiz"]');
+      if (quizItem) quizItem.textContent = dueCount > 0 ? `Kvízy (${dueCount})` : 'Kvízy';
+      const quizTab = document.querySelector('.tab[data-view="quiz"] .tab-label');
+      if (quizTab) quizTab.textContent = dueCount > 0 ? `Kvíz (${dueCount})` : 'Kvíz';
     }
   }
 
