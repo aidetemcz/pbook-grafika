@@ -2,33 +2,45 @@
    p-book v3: Mobile-first adaptive UX
    ============================================= */
 :root {
-  --bg: #F8F8F5;
+  /* ── pbook brand tokeny (Figma 01yQTQ2aTXKf9f8T41sz31, frame „Úvod" 1:2) ── */
+  --bg: #FFFFFF;
   --surface: #FFFFFF;
   --surface-raised: #FFFFFF;
-  --text: #1C1917;
-  --text-2: #57534E;
-  --text-3: #A8A29E;
-  --border: #E7E5E4;
-  --border-light: #F5F5F4;
-  --accent: #7C3AED;
-  --accent-hover: #6D28D9;
-  --accent-bg: #EDE9FE;
+  --text: #111111;            /* Black (Figma #000000, jemně změkčené pro dlouhé čtení) */
+  --text-2: #6B6B6B;          /* sekundární text — tmavší varianta Grey50, WCAG AA ~5:1 */
+  --text-3: #858585;          /* Grey50 — jen meta ≥14px / dekorace */
+  --border: #E4E4E4;
+  --border-light: #F0F0F0;
+  --accent: #873BE4;          /* Violet */
+  --accent-hover: #6E2AC9;
+  --accent-bg: #F1E9FE;
+  /* pbook akcenty */
+  --pink: #DF46A2;
+  --pink-hover: #C63A8F;
+  --pink-bg: #FCE8F3;
+  --violet: #873BE4;
+  --dark-blue: #2B3F6C;
+  --grey5: #F7F7F7;
+  --grey25: #BDBDBD;
+  --grey50: #858585;
+  --gradient-1: linear-gradient(34deg, #873BE4 15%, #DF46A2 89%);   /* FAB, pilulky */
+  --gradient-light: linear-gradient(43deg, #EFE3FF 15%, #FFE4F5 89%); /* karta kvízu */
   --engineer: #2563EB;
   --engineer-bg: #EFF6FF;
   --product: #059669;
   --product-bg: #ECFDF5;
   --business: #D97706;
   --business-bg: #FFFBEB;
-  --sidebar-color: #7C3AED;
-  --sidebar-bg: #F5F3FF;
-  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --sidebar-color: #873BE4;
+  --sidebar-bg: #F7F7F7;      /* Grey5 */
+  --font-body: 'Alegreya', Georgia, 'Times New Roman', serif;          /* obsah */
+  --font-ui: 'Istok Web', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* UI */
   --font-mono: 'SF Mono', Consolas, monospace;
   --content-w: 680px;
   --topbar-h: 52px;
   --bottomnav-h: 56px;
-  --fs: 1.1rem;
-  --lh: 1.8;
+  --fs: 1.15rem;
+  --lh: 1.55;
   --radius: 12px;
   --radius-sm: 8px;
   --shadow: 0 1px 3px rgba(0,0,0,0.08);
