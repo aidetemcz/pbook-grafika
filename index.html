@@ -58,7 +58,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Istok+Web:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-<link rel="stylesheet" href="css/style.css?v=3.16.0">
+<link rel="stylesheet" href="css/style.css?v=3.17.0">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 </head>
 <body>
@@ -202,7 +202,7 @@
 
 <!-- TOP BAR -->
 <header class="topbar" id="topbar">
-  <span class="topbar-logo" onclick="app.showWelcome()" role="button" tabindex="0">pbook</span>
+  <span class="topbar-logo" onclick="app.showWelcome()" role="button" tabindex="0" aria-label="pbook — domů"><img src="/images/pbook-logo.svg" alt="pbook" height="28"></span>
   <button class="topbar-search" onclick="app.openSearch()" aria-label="Hledat">
     <span>&#128269;</span>
     <span class="search-placeholder">Hledej…</span>
@@ -322,6 +322,11 @@
     <span class="tab-label">Profil</span>
   </button>
 </nav>
+
+<!-- FAB: plovoucí AI chatbot (gradient, vpravo dole) -->
+<button class="pb-fab" id="chatFab" onclick="app.switchView('chat')" aria-label="Zeptej se AI průvodce">
+  <img src="/images/ic-chat.svg" alt="" width="26" height="26">
+</button>
 
 <!-- XP Toast (slides in from top-right) -->
 <div class="xp-toast" id="xpToast"></div>

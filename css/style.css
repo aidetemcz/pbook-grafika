@@ -481,6 +481,36 @@ textarea.cert-input { resize: vertical; line-height: 1.4; }
   .read-layout { display: block; max-width: 100%; }
   .read-toc { display: none; }
 }
+/* Logo SVG v top baru */
+.topbar-logo { display: flex; align-items: center; }
+.topbar-logo img { height: 28px; display: block; }
+/* Hlavička článku podle Figmy */
+.block-head { margin-bottom: 1.4em; }
+.bh-meta { display: flex; align-items: center; gap: 12px; font-family: var(--font-ui); font-size: .85rem; text-transform: uppercase; letter-spacing: .02em; color: var(--grey50); margin-bottom: .7em; }
+.bh-meta .bnav-back { font-size: 1rem; color: var(--grey50); padding: 0; }
+.bh-meta .bnav-back:hover { color: var(--violet); }
+.bh-chapter { cursor: pointer; }
+.bh-chapter:hover { color: var(--violet); }
+.bh-progress { display: inline-flex; align-items: center; gap: 6px; }
+.bh-progress svg { display: block; }
+.bnav-core { font-size: .72rem; font-weight: 700; color: var(--violet); background: var(--accent-bg); padding: .1em .5em; border-radius: 6px; }
+.bh-titlerow { display: flex; align-items: flex-start; gap: 20px; }
+.bh-titles { flex: 1; min-width: 0; }
+.bh-title { font-family: var(--font-body); font-weight: 700; font-size: 1.95rem; line-height: 1.12; color: var(--text); margin: 0 0 .18em; }
+.bh-sub { font-family: var(--font-ui); font-size: 1.05rem; color: var(--pink); line-height: 1.3; }
+.bh-actions { display: flex; gap: 8px; flex-shrink: 0; padding-top: 2px; }
+.bh-action { width: 40px; height: 40px; border-radius: 50%; border: none; background: transparent; cursor: pointer; display: grid; place-items: center; transition: background var(--transition); }
+.bh-action:hover { background: var(--accent-bg); }
+.bh-action img { display: block; }
+.bh-action.speaking { background: var(--accent-bg); box-shadow: 0 0 0 2px var(--violet); animation: bhpulse 1.2s ease-in-out infinite; }
+@keyframes bhpulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+/* Fasety se přesunuly do ikony ⚙️ — skryjeme starý chip, panel zůstává funkční */
+.tellings-indicator .steer-chip { display: none; }
+/* FAB: plovoucí AI chatbot */
+.pb-fab { position: fixed; right: 28px; bottom: 28px; z-index: 180; width: 64px; height: 64px; border-radius: 50%; background: var(--gradient-1); border: none; cursor: pointer; display: grid; place-items: center; box-shadow: 0 8px 24px rgba(135,59,228,.35); transition: transform var(--transition); }
+.pb-fab:hover { transform: scale(1.06); }
+.pb-fab img { display: block; }
+@media (max-width: 600px) { .pb-fab { width: 56px; height: 56px; right: 16px; bottom: 16px; } }
 
 /* Chapter header */
 .ch-head { margin-bottom: 2em; padding-bottom: 1.5em; border-bottom: 1px solid var(--border); }

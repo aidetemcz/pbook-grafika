@@ -556,6 +556,42 @@ class PBook {
     </div>`;
   }
 
+  // 🔊 Audioverze článku — Web Speech API (bez backendu, čte aktuální podání česky)
+  toggleSpeak(blockId) {
+    const synth = window.speechSynthesis;
+    if (!synth) { this.showXPToast?.('Tvůj prohlížeč neumí předčítání.', 'info'); return; }
+    // klik na aktivní = stop
+    if (this._speakingId === blockId && (synth.speaking || synth.pending)) {
+      synth.cancel(); this._speakingId = null; this._updateSpeakBtns(); return;
+    }
+    synth.cancel();
+    const art = document.getElementById('b-' + blockId);
+    if (!art) return;
+    const title = art.querySelector('.bh-title')?.textContent || '';
+    const body = art.querySelector('.spine-body')?.textContent || '';
+    const text = (title + '. ' + body).replace(/\s+/g, ' ').trim();
+    if (!text) return;
+    const speak = () => {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'cs-CZ'; u.rate = 1;
+      const cs = synth.getVoices().find(v => /^cs/i.test(v.lang) || /Czech/i.test(v.name));
+      if (cs) u.voice = cs;
+      u.onend = u.onerror = () => { if (this._speakingId === blockId) { this._speakingId = null; this._updateSpeakBtns(); } };
+      this._speakingId = blockId;
+      synth.speak(u);
+      this._updateSpeakBtns();
+    };
+    // hlasy se u některých prohlížečů načítají async
+    if (!synth.getVoices().length) { synth.onvoiceschanged = () => { synth.onvoiceschanged = null; speak(); }; setTimeout(speak, 250); }
+    else speak();
+  }
+
+  _updateSpeakBtns() {
+    document.querySelectorAll('.bh-action-audio').forEach(b => {
+      b.classList.toggle('speaking', b.dataset.block === this._speakingId);
+    });
+  }
+
   // End-of-block steering: ask AFTER the reader finished the telling.
   // Dismissible (✕) and auto-fades ~25 s after becoming visible if untouched;
   // any interaction inside cancels the fade. The tellings indicator stays.
@@ -2030,20 +2066,34 @@ class PBook {
 
     return `<article class="block-article fade-up" id="b-${block.id}">
       ${overrideBar}
-      <div class="block-nav">
-        <button class="bnav-back" onclick="app.goBack()" title="Zpět">&larr;</button>
-        <span class="bnav-ch" onclick="app.goToMapChapter(${block._chapterIdx})">Kap. ${chNum}</span>
-        <span class="bnav-sep">&middot;</span>
-        <span class="bnav-progress">${posInCh}/${totalInCh}</span>
-        ${block.core ? '<span class="bnav-core">ZÁKLAD</span>' : ''}
-        <div class="block-status ${isRead ? 'read' : this.user.seenBlocks.has(block.id) ? 'seen' : ''}"></div>
-      </div>
-      <div class="block-header">
-        <h3>${block.title}</h3>
-        <div class="block-meta">
-          <span>${block.readingTime || 3} min čtení</span>
+      <header class="block-head">
+        <div class="bh-meta">
+          <button class="bnav-back" onclick="app.goBack()" title="Zpět" aria-label="Zpět">&larr;</button>
+          <span class="bh-chapter" onclick="app.goToMapChapter(${block._chapterIdx})">Kapitola ${chNum}</span>
+          <span class="bh-progress" aria-label="Článek ${posInCh} z ${totalInCh}">
+            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" fill="none" stroke="var(--grey25)" stroke-width="2"></circle>
+              <circle cx="12" cy="12" r="10" fill="none" stroke="var(--violet)" stroke-width="2" stroke-linecap="round"
+                stroke-dasharray="62.83" stroke-dashoffset="${(62.83 * (1 - posInCh / (totalInCh || 1))).toFixed(1)}" transform="rotate(-90 12 12)"></circle>
+            </svg>
+            <span>${posInCh}/${totalInCh}</span>
+          </span>
+          ${block.core ? '<span class="bnav-core">Základ</span>' : ''}
+          <span class="bh-time">${block.readingTime || 3} min čtení</span>
+          <div class="block-status ${isRead ? 'read' : this.user.seenBlocks.has(block.id) ? 'seen' : ''}"></div>
         </div>
-      </div>
+        <div class="bh-titlerow">
+          <div class="bh-titles">
+            <h3 class="bh-title">${block.title}</h3>
+            ${ch?.subtitle ? `<div class="bh-sub">${ch.subtitle}</div>` : ''}
+          </div>
+          <div class="bh-actions">
+            <button class="bh-action bh-action-audio" data-block="${block.id}" onclick="app.toggleSpeak('${block.id}')" title="Poslechnout článek" aria-label="Audioverze"><img src="/images/ic-audio.svg" alt="" width="22" height="24"></button>
+            <button class="bh-action" onclick="app.toggleTellings('${block.id}')" title="Fasety — hloubka a způsob podání" aria-label="Fasety"><img src="/images/ic-facets.svg" alt="" width="20" height="21"></button>
+            <button class="bh-action" onclick="app.steerBlock('${block.id}','deeper')" title="Chci vědět víc — hlubší verze" aria-label="Chci vědět víc"><img src="/images/ic-more.svg" alt="" width="17" height="24"></button>
+          </div>
+        </div>
+      </header>
       ${this._renderTellingsIndicator(block)}
       <div class="block-with-side">
         <div class="block-main">
