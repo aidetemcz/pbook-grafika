@@ -1705,6 +1705,67 @@ class PBook {
     this._applyTellingChoices();   // re-apply saved per-concept telling choices
     this._updateMissionBar();
     this._showMissionIntro();
+    this._renderReadToc();
+    this._setupTocSync();
+  }
+
+  // ===== LEVÝ TOC SIDEBAR (obsah knihy + scroll-sync) =====
+  _renderReadToc() {
+    const toc = document.getElementById('readToc');
+    if (!toc || !this.book) return;
+    let h = '<nav aria-label="Obsah">';
+    this.book.chapters.forEach((ch, ci) => {
+      const spines = (this.chapters[ci]?.blocks || []).filter(b => b.type === 'spine');
+      if (!spines.length) return;
+      h += `<div class="toc-chapter">${ch.title}</div><ul class="toc-list">`;
+      for (const b of spines) {
+        const t = (b.title || '').replace(/</g, '&lt;');
+        h += `<li class="toc-item" data-block-id="${b.id}"><a href="#${b.id}" onclick="event.preventDefault();app.openBlock('${b.id}','toc')" aria-current="false">${t}</a></li>`;
+      }
+      h += '</ul>';
+    });
+    h += '</nav>';
+    // Karta Rychlý kvíz (zatím otevře stávající kvízovou sekci; kontextovost dodáme ve fázi featur)
+    if (this._f('spaceRepetition')) {
+      h += `<div class="toc-quiz"><div class="toc-quiz-label">Rychlý kvíz</div><div class="toc-quiz-q">Otestuj, co si pamatuješ z téhle kapitoly.</div><button class="toc-quiz-btn" onclick="app.switchView('quiz')">Spustit kvíz →</button></div>`;
+    }
+    toc.innerHTML = h;
+    this._tocActiveId = null;
+  }
+
+  _setupTocSync() {
+    if (this._tocScrollHandler) window.removeEventListener('scroll', this._tocScrollHandler);
+    let ticking = false;
+    this._tocScrollHandler = () => {
+      if (this.currentView !== 'read' || ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => { this._syncReadToc(); ticking = false; });
+    };
+    window.addEventListener('scroll', this._tocScrollHandler, { passive: true });
+    this._syncReadToc();
+  }
+
+  _syncReadToc() {
+    const toc = document.getElementById('readToc');
+    if (!toc) return;
+    const items = toc.querySelectorAll('.toc-item');
+    if (!items.length) return;
+    const offset = 160;
+    let activeId = null;
+    document.querySelectorAll('#readPane [id^="b-"]').forEach(el => {
+      if (el.getBoundingClientRect().top <= offset) activeId = el.id.slice(2);
+    });
+    if (activeId === this._tocActiveId) return;
+    this._tocActiveId = activeId;
+    let activeLi = null;
+    items.forEach(li => {
+      const on = li.dataset.blockId === activeId;
+      li.classList.toggle('active', on);
+      const a = li.querySelector('a');
+      if (a) a.setAttribute('aria-current', on ? 'true' : 'false');
+      if (on) activeLi = li;
+    });
+    if (activeLi) activeLi.scrollIntoView({ block: 'nearest' });
   }
 
   async _renderChapterContent(ch, idx) {
