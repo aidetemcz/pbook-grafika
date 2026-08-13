@@ -3548,7 +3548,7 @@ class PBook {
     const summary = this.user.getSignalSummary();
 
     let html = `<div class="map-header fade-up">
-      <h2 class="map-title">Mapa knihy</h2>
+      <h2 class="map-title">Přehled všeho</h2>
       <div class="map-progress-summary">
         <div class="map-progress-bar"><div class="map-progress-fill" style="width:${prog.pct}%"></div></div>
         <span class="map-progress-text">${prog.read} přečteno &middot; ${prog.seen} zhlédnuto &middot; ${prog.total} celkem</span>
