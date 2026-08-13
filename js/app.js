@@ -3563,7 +3563,7 @@ class PBook {
     </div>`;
 
     const resetBtn = `<button class="map-reset-btn" onclick="app.resetAll()">Vynulovat postup</button>`;
-    if (mapMode === 'list') {
+    if (mapMode === 'list' || mapMode === 'visual') {
       html += `<div class="map-band"><div class="map-legend">
         <span class="ml-item"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#059669"/></svg> Přečteno</span>
         <span class="ml-item"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#E7E5E4"/></svg> Nepřečteno</span>
@@ -3968,9 +3968,14 @@ class PBook {
     chapters.forEach((c, idx) => {
       let arts = '';
       c.items.forEach(it => {
-        const isRead = readSet.has(it.id), isSaved = savedSet.has(it.id), isCore = it.core;
+        const isRead = readSet.has(it.id), isSaved = savedSet.has(it.id), isCore = it.core, isGame = it.type === 'game';
         const cls = `mm-article${isCore ? ' vn-core' : ''}${isRead ? ' vn-read' : ''}${isSaved ? ' vn-saved' : ''}`;
-        arts += `<div class="${cls}" data-ch="${c.id}" onclick="app.openBlock('${it.id}')" title="${this.escHtml(it.title)}">${this.escHtml(it.title)}</div>`;
+        arts += `<div class="${cls}" data-ch="${c.id}" onclick="app.openBlock('${it.id}')" title="${this.escHtml(it.title)}">`
+          + `<span class="mm-dot"></span>`
+          + `<span class="mm-a-title">${this.escHtml(it.title)}</span>`
+          + (isCore ? `<span class="mm-badge">ZÁKLAD</span>` : '')
+          + (isGame ? `<span class="mm-game">\u{1F3AE}</span>` : '')
+          + `</div>`;
       });
       tree += `<div class="mm-chapter-block">
         <div class="mm-chapter" onclick="app.goChapter(${c.ci})">

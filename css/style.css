@@ -799,7 +799,7 @@ pre code { font-family: var(--font-mono); font-size: .82rem; line-height: 1.5; b
 .vmap-ch-pill:hover { border-color: var(--grey25) !important; background: var(--grey5); }
 
 /* Vizuální přehled — stromová mind mapa (boxíky + spojnice) */
-.mindmap { max-width: 760px; margin: .4em auto 0; border-top: 1px solid var(--grey25); padding-top: 1.2em; text-align: left; }
+.mindmap { max-width: 760px; margin: .2em auto 0; text-align: left; }
 .mm-toolbar { display: flex; flex-wrap: wrap; gap: .5em; justify-content: center; margin-bottom: 1.4em; }
 .mm-filter { font-family: var(--font-ui); font-size: .78rem; font-weight: 600; padding: .35em .85em; border-radius: var(--radius); border: 1px solid var(--grey25); background: #fff; color: var(--text); cursor: pointer; transition: all var(--transition); }
 .mm-filter:hover { border-color: var(--grey50); }
@@ -808,17 +808,21 @@ pre code { font-family: var(--font-mono); font-size: .82rem; line-height: 1.5; b
 .mm-chapter-block:last-child { border-bottom: none; }
 .mm-chapter { position: relative; flex: 0 0 210px; display: flex; align-items: center; gap: .5em; background: #fff; border: 1px solid var(--grey25); border-radius: var(--radius); padding: .55em .7em; cursor: pointer; transition: border-color var(--transition); }
 .mm-chapter:hover { border-color: var(--violet); }
-.mm-chapter::after { content: ""; position: absolute; right: -20px; top: 50%; width: 20px; height: 2px; background: var(--grey25); }
+.mm-chapter::after { content: ""; position: absolute; right: -20px; top: 50%; width: 20px; height: 1px; background: var(--grey25); }
 .mm-ch-num { flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; color: #fff; font-family: var(--font-ui); font-weight: 700; font-size: .8rem; display: grid; place-items: center; }
 .mm-ch-title { font-family: var(--font-ui); font-weight: 700; font-size: .82rem; color: var(--text); text-transform: uppercase; letter-spacing: .02em; line-height: 1.15; }
 .mm-articles { position: relative; display: flex; flex-direction: column; gap: 7px; flex: 1; min-width: 0; }
-.mm-articles::before { content: ""; position: absolute; left: -20px; top: 15px; bottom: 15px; width: 2px; background: var(--grey25); }
-.mm-article { position: relative; background: #fff; border: 1px solid var(--grey25); border-radius: var(--radius); padding: .4em .8em; font-family: var(--font-ui); font-size: .85rem; color: var(--grey50); cursor: pointer; transition: all var(--transition); }
-.mm-article::before { content: ""; position: absolute; left: -20px; top: 50%; width: 20px; height: 2px; background: var(--grey25); }
+.mm-articles::before { content: ""; position: absolute; left: -20px; top: 15px; bottom: 15px; width: 1px; background: var(--grey25); }
+.mm-article { position: relative; display: flex; align-items: center; gap: .5em; background: #fff; border: 1px solid var(--grey25); border-radius: var(--radius); padding: .4em .8em; font-family: var(--font-ui); font-size: .85rem; color: var(--grey50); cursor: pointer; transition: all var(--transition); }
+.mm-article::before { content: ""; position: absolute; left: -20px; top: 50%; width: 20px; height: 1px; background: var(--grey25); }
 .mm-article:hover { border-color: var(--violet); color: var(--text); }
+.mm-dot { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; background: var(--grey25); }
+.mm-article.vn-read .mm-dot { background: var(--product); }
+.mm-a-title { flex: 1; min-width: 0; }
+.mm-badge { flex: 0 0 auto; font-size: .58rem; font-weight: 700; color: var(--accent); background: var(--accent-bg); padding: .12em .35em; border-radius: 3px; letter-spacing: .02em; }
+.mm-game { flex: 0 0 auto; font-size: .78rem; }
 .mm-article.vn-core { font-weight: 600; color: var(--text); }
-.mm-article.vn-read { color: var(--text); border-color: #7dd3a8; }
-.mm-article.vn-read::after { content: " ✓"; color: var(--product); font-weight: 700; }
+.mm-article.vn-read { color: var(--text); }
 .mm-article.vn-saved { border-color: #f59e0b; }
 .mm-foot { font-family: var(--font-ui); font-size: .75rem; color: var(--grey50); margin-top: 1.2em; text-align: center; }
 @media (max-width: 560px) {
@@ -896,7 +900,7 @@ pre code { font-family: var(--font-mono); font-size: .82rem; line-height: 1.5; b
 .map-reset-btn:hover { border-color: #dc2626; color: #dc2626; }
 /* Legenda-band: mezi dvěma šedými čarami, reset zarovnaný doprava */
 .map-band { display: flex; align-items: center; justify-content: space-between; gap: 1em; flex-wrap: wrap; border-top: 1px solid var(--grey25); border-bottom: 1px solid var(--grey25); padding: .7em 0; margin: 2em 0 1.8em; text-align: left; }
-.map-band--end { justify-content: flex-end; }
+.map-band--end { justify-content: flex-end; border-bottom: none; }
 .map-band .map-legend { margin: 0; justify-content: flex-start; }
 .ml-item { display: inline-flex; align-items: center; gap: .35em; font-family: var(--font-ui); font-size: .78rem; color: var(--grey50); white-space: nowrap; }
 
