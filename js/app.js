@@ -151,7 +151,6 @@ class PBook {
         this.updateXPBadge();
         this._mapMode = 'coverage';
         this.switchView('map');
-        setTimeout(() => document.querySelectorAll('.covmap-chapter-sec').forEach((d, i) => { if (i < 2) d.open = true; }), 1500);
       } else if (hash.startsWith('quiz-')) {
         // Single quiz card deep link — show in quiz view
         const blockId = hash.replace('quiz-', '');
@@ -3547,24 +3546,17 @@ class PBook {
 
     const summary = this.user.getSignalSummary();
 
+    const readMin = summary.dwellTotal > 60000 ? Math.round(summary.dwellTotal / 60000) : 0;
+    const statsLine = `${prog.read} přečteno · ${prog.seen} zhlédnuto${readMin ? ' · ' + readMin + ' min čtení' : ''} · ${prog.total} celkem`;
+
     let html = `<div class="map-header fade-up">
       <h2 class="map-title">Přehled všeho</h2>
-      <div class="map-progress-summary">
-        <div class="map-progress-bar"><div class="map-progress-fill" style="width:${prog.pct}%"></div></div>
-        <span class="map-progress-text">${prog.read} přečteno &middot; ${prog.seen} zhlédnuto &middot; ${prog.total} celkem</span>
-      </div>
-      ${summary.views > 0 ? `<div class="map-signals-bar">
-        ${summary.reads > 0 ? `<span>&#128214; ${summary.reads} přečteno</span>` : ''}
-        ${summary.views > summary.reads ? `<span>&#128065; ${summary.views - summary.reads} zhlédnuto</span>` : ''}
-        ${summary.ratings > 0 ? `<span>&#128293; ${summary.ratings} hodnoceno</span>` : ''}
-        ${summary.saves > 0 ? `<span>&#128278; ${summary.saves} uloženo</span>` : ''}
-        ${summary.expands > 0 ? `<span>&#128295; ${summary.expands} prozkoumáno</span>` : ''}
-        ${summary.dwellTotal > 60000 ? `<span>&#9201; ${Math.round(summary.dwellTotal/60000)} min čtení</span>` : ''}
-      </div>` : ''}
+      <div class="map-stats-line">${statsLine}</div>
+      <div class="map-progress-bar"><div class="map-progress-fill" style="width:${prog.pct}%"></div></div>
       <div class="map-mode-toggle">
         <button class="map-mode-btn ${mapMode === 'visual' ? 'active' : ''}" onclick="app.setMapMode('visual')">Vizuální</button>
         <button class="map-mode-btn ${mapMode === 'list' ? 'active' : ''}" onclick="app.setMapMode('list')">Podrobný seznam</button>
-        ${this._f('steering') ? `<button class="map-mode-btn ${mapMode === 'coverage' ? 'active' : ''}" onclick="app.setMapMode('coverage')">🌱 Živá kniha</button>` : ''}
+        ${this._f('steering') ? `<button class="map-mode-btn ${mapMode === 'coverage' ? 'active' : ''}" onclick="app.setMapMode('coverage')">Personalizovat</button>` : ''}
         <button class="map-mode-btn ${mapMode === 'saved' ? 'active' : ''}" onclick="app.setMapMode('saved')">Uložené${this.user.savedBlocks.size ? ' (' + this.user.savedBlocks.size + ')' : ''}</button>
         <button class="map-mode-btn ${mapMode === 'notes' ? 'active' : ''}" onclick="app.setMapMode('notes')">Poznámky${this._getNoteCount() ? ' (' + this._getNoteCount() + ')' : ''}</button>
       </div>
@@ -3776,18 +3768,19 @@ class PBook {
         const bg = pct === 0 ? 'var(--border)' : pct < 0.34 ? '#FDE68A' : pct < 0.85 ? '#A7F3D0' : '#6EE7B7';
         return `<span class="cov-heat" style="background:${bg}" title="${v}: ${n}/${chMetas.length} článků">${icons[v] || v[0]}</span>`;
       }).join('');
-      sections += `<details class="covmap-chapter-sec"><summary>Kap. ${ch.number} · ${this.escHtml(ch.title)}
+      sections += `<div class="covmap-chapter-sec">
+        <div class="covmap-ch-head">${this.escHtml(ch.title)}
           <span class="covmap-mini">${chMetas.length} článků</span>
-          <span class="cov-heatrow">${heat}</span></summary>
+          <span class="cov-heatrow">${heat}</span></div>
         <div style="overflow-x:auto"><table class="covmap">
           <tr><th></th>${values.map(v => `<th class="${v === myVal ? 'covmap-mylens' : ''}">${icons[v] || ''}<div>${v}</div></th>`).join('')}</tr>
           ${rows}
-        </table></div></details>`;
+        </table></div></div>`;
     }
 
     return `<div class="covmap-intro">
-        <div class="tellings-dims" style="margin-bottom:.4em">${Object.entries(DIM_LABELS).map(([d, l]) =>
-          `<button class="steer-chip ${d === dim ? 'dim-active' : ''}" onclick="app.setCovDim('${d}')">${l}</button>`).join('')}
+        <div class="covmap-dimbar">${Object.entries(DIM_LABELS).map(([d, l]) =>
+          `<button class="covmap-dim-btn ${d === dim ? 'active' : ''}" onclick="app.setCovDim('${d}')">${l}</button>`).join('')}
         </div>
         <p style="font-size:.78rem;margin-bottom:.3em">Každý článek živé knihy — <b>${totalArticles}</b> řádků; podle hodnoty:${values.map(v => ` ${icons[v] || v} <b>${coveringCount[v]}</b>`).join(' ·')}. ● značí hodnoty, které článek pokrývá — jeden článek jich může obsloužit víc${myVal && myVal !== this._facetDefault(dim) ? `; tvoje nastavení <b>${icons[myVal] || ''} ${myVal}</b> je zvýrazněné` : ''}. Klikni na řádek a čti; chybějící podání si vyžádáš nebo vygeneruješ přes 🎛 panel v každé části. Chybí ti celý <i>koncept</i>? <a href="#" onclick="event.preventDefault();app.proposeConcept()" style="color:var(--accent)">🌱 navrhni ho</a>.</p>
         <p style="font-size:.68rem;color:var(--text-3)">barva ● = stav: <span style="color:#7C3AED">■</span> jádro · <span style="color:#10B981">■</span> redakční · <span style="color:#D97706">■</span> čtenářský obsah (✨ tvoje / ⚡ sdílené)</p>

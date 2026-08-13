@@ -767,7 +767,8 @@ pre code { font-family: var(--font-mono); font-size: .82rem; line-height: 1.5; b
 .map-header { text-align: center; margin-bottom: 2em; }
 .map-title { font-family: var(--font-body); font-size: 2rem; font-weight: 700; margin-bottom: .5em; }
 .map-progress-summary { margin-bottom: 1em; }
-.map-progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: .4em; }
+.map-stats-line { font-family: var(--font-ui); font-size: .85rem; color: var(--grey50); margin-bottom: .9em; }
+.map-progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 1em; }
 .map-progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .5s ease; }
 .map-progress-text { font-family: var(--font-ui); font-size: .8rem; color: var(--text-2); }
 
@@ -861,9 +862,10 @@ pre code { font-family: var(--font-mono); font-size: .82rem; line-height: 1.5; b
 .map-reset-btn:hover { background: #fef2f2; }
 
 /* Map mode toggle */
-.map-mode-toggle { display: flex; gap: .3em; justify-content: center; margin-top: .8em; }
-.map-mode-btn { font-family: var(--font-ui); font-size: .75rem; font-weight: 600; padding: .35em .9em; border-radius: 20px; border: 1.5px solid var(--border); color: var(--text-3); transition: all var(--transition); }
-.map-mode-btn:hover { border-color: var(--text-2); color: var(--text-2); }
+.map-mode-toggle { display: flex; gap: .5em; justify-content: center; flex-wrap: wrap; margin-top: .3em; }
+.map-mode-btn { font-family: var(--font-ui); font-size: .82rem; font-weight: 600; padding: .4em 1em; border-radius: var(--radius); border: 1px solid var(--grey25); background: #fff; color: var(--text); transition: all var(--transition); }
+.map-mode-btn:hover { border-color: var(--grey50); }
+.map-mode-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 .map-mode-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
 /* Legend (SVG-based) */
@@ -1252,13 +1254,17 @@ pre code { font-family: var(--font-mono); font-size: .82rem; line-height: 1.5; b
 .boss-score-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
 
 /* Living book coverage map */
-.covmap-intro { padding: .4em .2em .8em; }
+.covmap-intro { padding: .4em .2em .8em; text-align: left; }
+.covmap-dimbar { display: flex; flex-wrap: wrap; gap: .5em; justify-content: center; margin-bottom: 1em; }
+.covmap-dim-btn { font-family: var(--font-ui); font-size: .8rem; font-weight: 600; padding: .38em .9em; border-radius: var(--radius); border: 1px solid var(--grey25); background: #fff; color: var(--text); cursor: pointer; transition: all var(--transition); }
+.covmap-dim-btn:hover { border-color: var(--grey50); }
+.covmap-dim-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 .covmap { border-collapse: collapse; font-size: .72rem; width: 100%; }
 .covmap th { padding: .3em .45em; font-size: .62rem; color: var(--text-2); text-align: center; }
 .covmap th div { font-size: .55rem; font-weight: 400; }
 .covmap-chapter td { font-weight: 700; font-size: .68rem; color: var(--accent); padding: .7em .3em .2em; }
-.covmap-concept { padding: .22em .4em; cursor: pointer; white-space: nowrap; max-width: 16em; overflow: hidden; text-overflow: ellipsis; }
-.covmap-concept:hover { color: var(--accent); }
+.covmap-concept { font-family: var(--font-ui); font-size: .92rem; color: var(--grey50); padding: .3em .6em .3em 0; cursor: pointer; white-space: nowrap; max-width: 18em; overflow: hidden; text-overflow: ellipsis; }
+.covmap-concept:hover { color: var(--violet); }
 .covmap-cell { text-align: center; padding: .15em .3em; border: 1px solid var(--border); cursor: pointer; min-width: 3em; }
 .covmap-cell:hover { background: var(--bg-2, rgba(125,125,125,.07)); }
 .covmap-gap button { color: var(--text-3); font-size: .8rem; width: 100%; }
@@ -1328,9 +1334,9 @@ mark.remix-mark { background: rgba(217, 119, 6, .16); border-bottom: 2px solid #
 .dimcount { font-size: .58rem; background: var(--border); border-radius: 999px; padding: 0 .4em; }
 
 /* Coverage map v2: chapter sections, per-cell inspector */
-.covmap-chapter-sec { margin: .5em 0; }
-.covmap-chapter-sec summary { font-size: .74rem; font-weight: 700; color: var(--accent); cursor: pointer; padding: .3em 0; }
-.covmap-mini { font-size: .58rem; color: var(--text-3); font-weight: 400; }
+.covmap-chapter-sec { margin: 1.4em 0 .5em; }
+.covmap-ch-head { font-family: var(--font-ui); font-size: 1rem; font-weight: 400; text-transform: uppercase; letter-spacing: .03em; color: var(--violet); padding: .3em 0; text-align: left; }
+.covmap-mini { font-size: .68rem; color: var(--grey50); font-weight: 400; text-transform: none; letter-spacing: 0; }
 .cov-inspector { border: 1.5px solid var(--accent); border-radius: 12px; padding: .6em .8em; margin: .5em 0 .8em; background: var(--bg-2, rgba(124,58,237,.04)); font-size: .75rem; }
 
 /* Feedback bar lifecycle */
