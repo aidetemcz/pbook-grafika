@@ -457,8 +457,8 @@ textarea.cert-input { resize: vertical; line-height: 1.4; }
 /* =============================================
    READ VIEW
    ============================================= */
-.read-layout { max-width: 1440px; margin: 0 auto; display: grid; grid-template-columns: 540px minmax(0, 1fr); gap: 0; align-items: start; }
-.read-pane { max-width: 700px; margin: 0; padding: 2em 40px 4em 60px; min-width: 0; }
+.read-layout { display: grid; grid-template-columns: 540px minmax(0, 1fr); gap: 0; align-items: start; }
+.read-pane { max-width: 700px; margin: 0; padding: 2em 40px 4em 64px; min-width: 0; }
 /* Levý sidebar: pevná výška, TOC scrolluje samostatně, chatbot karta vždy viditelná dole */
 .read-toc { position: sticky; top: var(--topbar-h); align-self: start; height: calc(100vh - var(--topbar-h)); display: flex; flex-direction: column; background: var(--grey5); border-right: 1px solid var(--grey25); }
 .toc-scroll { flex: 1 1 auto; overflow-y: auto; padding: 1.6em 28px 1em 40px; scrollbar-width: thin; }
@@ -473,7 +473,8 @@ textarea.cert-input { resize: vertical; line-height: 1.4; }
 .toc-item.active::before { width: 17px; height: 17px; left: 0; background: var(--violet); }
 .toc-item.active a { color: var(--text); font-weight: 700; }
 /* Chatbot okénko — vždy viditelné dole, kontextové k právě čtené podkapitole */
-.toc-quiz { flex: 0 0 auto; margin: 10px 28px 24px 40px; background: var(--gradient-light); border: 1px solid #fff; border-radius: var(--radius); padding: 1.1em 1.2em 1.2em; }
+.toc-quiz { flex: 0 0 auto; margin: 36px 28px 28px 40px; background: var(--gradient-light); border: 1px solid #fff; border-radius: var(--radius); padding: 1.1em 1.2em 1.2em; }
+.toc-scroll { padding-bottom: 1.5em; }
 .toc-quiz-label { font-family: var(--font-ui); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--pink); margin-bottom: .5em; }
 .toc-quiz-q { font-family: var(--font-body); font-weight: 700; font-size: 1.15rem; color: var(--text); line-height: 1.2; margin-bottom: .9em; }
 .toc-chat { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: var(--radius); padding: 5px 5px 5px 16px; }
@@ -576,9 +577,8 @@ textarea.cert-input { resize: vertical; line-height: 1.4; }
 .block-meta { font-family: var(--font-ui); font-size: .72rem; color: var(--text-3); display: flex; gap: .8em; align-items: center; }
 .meta-standalone { background: var(--accent-bg); color: var(--accent); padding: .1em .4em; border-radius: 3px; font-weight: 600; }
 
-.block-status { position: absolute; top: 0; left: 0; width: 3px; height: 100%; border-radius: var(--radius) 0 0 var(--radius); background: var(--border); transition: background .3s; }
-.block-status.seen { background: #fbbf24; }
-.block-status.read { background: var(--product); }
+/* Status pruh vlevo od článku se v ploché verzi neukazuje (read-stav = ✓ u titulku) */
+.block-status { display: none; }
 .block-article:has(.block-status.read) .bh-title::after { content: ' ✓'; color: var(--product); font-size: .6em; vertical-align: middle; }
 
 /* Spine body */
@@ -1179,8 +1179,8 @@ pre code { font-family: var(--font-mono); font-size: .82rem; line-height: 1.5; b
   .card-hero { flex: 0 0 380px; }
   .shelf-scroll { padding: 0 1.5em .5em; }
   .shelf-head { padding: 0 1.5em; }
-  .read-layout { padding: 0 1.5em; }
-  .read-pane { padding: 1.5em 0 4em; }
+  .read-layout { padding: 0; }
+  .read-pane { padding: 2em 40px 4em 64px; }
   /* Desktop: show nav links in topbar instead of bottom */
   .topbar::after { content: ''; } /* placeholder */
   .feedback-bar { bottom: 1em; }
