@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#FAFAF7">
+<meta name="theme-color" content="#FFFFFF">
 <title>Jak funguje internet? — p-book pro školy</title>
 <meta name="description" content="Živá interaktivní učebnice o fungování internetu pro 2. stupeň ZŠ. Servery, kabely, routery, pakety a digitální stopa — s misemi, vstupenkami, AI tvorbou a školním režimem. Podle materiálů Internet4Kids.">
 <meta name="author" content="Doprovodný materiál k lekcím Internet4Kids (MFF UK & PedF UK)">
@@ -53,8 +53,12 @@
 }
 </script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<!-- pbook fonty: Alegreya (obsah) + Istok Web (UI), latin-ext pro češtinu, font-display: swap -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Istok+Web:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-<link rel="stylesheet" href="css/style.css?v=3.13.0">
+<link rel="stylesheet" href="css/style.css?v=3.26.0">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 </head>
 <body>
@@ -198,17 +202,23 @@
 
 <!-- TOP BAR -->
 <header class="topbar" id="topbar">
-  <div class="topbar-left">
-    <span class="topbar-title" onclick="app.showWelcome()">p-book</span>
-  </div>
-  <div class="mission-bar-inline" id="missionBarInline" style="display:none"></div>
-  <button class="topbar-search" onclick="app.openSearch()">
+  <span class="topbar-logo" onclick="app.showWelcome()" role="button" tabindex="0" aria-label="pbook — domů"><img src="/images/pbook-logo.svg" alt="pbook" height="28"></span>
+  <button class="topbar-search" onclick="app.openSearch()" aria-label="Hledat">
     <span>&#128269;</span>
-    <span class="search-placeholder">Hledat…</span>
+    <span class="search-placeholder">Hledej…</span>
   </button>
+  <nav class="topnav" aria-label="Hlavní menu">
+    <button class="topnav-item" data-view="home" onclick="app.switchView('home')">Tvůj obsah</button>
+    <button class="topnav-item" data-view="read" onclick="app.switchView('read')">Číst</button>
+    <button class="topnav-item" data-view="glossary" onclick="app.switchView('glossary')">Mise</button>
+    <button class="topnav-item" data-view="quiz" onclick="app.switchView('quiz')">Kvízy</button>
+  </nav>
+  <div class="mission-bar-inline" id="missionBarInline" style="display:none"></div>
   <div class="topbar-right">
+    <button class="topnav-item topnav-item--right" data-view="map" onclick="app.switchView('map')">Přehled obsahu a personalizace</button>
     <button class="xp-badge" id="xpBadge" onclick="app.switchView('profile')"></button>
-    <button class="topbar-icon" id="settingsBtn" onclick="app.toggleSettings()">&#9881;</button>
+    <button class="topbar-icon" id="settingsBtn" onclick="app.toggleSettings()" aria-label="Nastavení">&#9881;</button>
+    <button class="topbar-avatar" onclick="app.switchView('profile')" aria-label="Profil"></button>
   </div>
 </header>
 
@@ -225,6 +235,7 @@
   <!-- READ VIEW (focused reading) -->
   <div class="view" id="view-read">
     <div class="read-layout">
+      <aside class="read-toc" id="readToc" aria-label="Obsah knihy"><!-- TOC rendered by JS --></aside>
       <div class="read-pane" id="readPane">
         <!-- Content rendered by JS -->
       </div>
@@ -311,6 +322,11 @@
     <span class="tab-label">Profil</span>
   </button>
 </nav>
+
+<!-- FAB: plovoucí AI chatbot (gradient, vpravo dole) -->
+<button class="pb-fab" id="chatFab" onclick="app.switchView('chat')" aria-label="Zeptej se AI průvodce">
+  <img src="/images/ic-chat.svg" alt="" width="26" height="26">
+</button>
 
 <!-- XP Toast (slides in from top-right) -->
 <div class="xp-toast" id="xpToast"></div>

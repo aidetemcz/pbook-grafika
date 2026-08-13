@@ -151,7 +151,6 @@ class PBook {
         this.updateXPBadge();
         this._mapMode = 'coverage';
         this.switchView('map');
-        setTimeout(() => document.querySelectorAll('.covmap-chapter-sec').forEach((d, i) => { if (i < 2) d.open = true; }), 1500);
       } else if (hash.startsWith('quiz-')) {
         // Single quiz card deep link — show in quiz view
         const blockId = hash.replace('quiz-', '');
@@ -554,6 +553,42 @@ class PBook {
       <button class="steer-chip" onclick="app.toggleTellings('${block.id}')" title="Další způsoby, jak se tenhle koncept dá vyprávět">&#127899;&#65039; ${others ? `další podání: ${others}` : 'další podání'} &#9662;</button>
       <div class="tellings-panel" id="tellings-${block.id}" style="display:none"></div>
     </div>`;
+  }
+
+  // 🔊 Audioverze článku — Web Speech API (bez backendu, čte aktuální podání česky)
+  toggleSpeak(blockId) {
+    const synth = window.speechSynthesis;
+    if (!synth) { this.showXPToast?.('Tvůj prohlížeč neumí předčítání.', 'info'); return; }
+    // klik na aktivní = stop
+    if (this._speakingId === blockId && (synth.speaking || synth.pending)) {
+      synth.cancel(); this._speakingId = null; this._updateSpeakBtns(); return;
+    }
+    synth.cancel();
+    const art = document.getElementById('b-' + blockId);
+    if (!art) return;
+    const title = art.querySelector('.bh-title')?.textContent || '';
+    const body = art.querySelector('.spine-body')?.textContent || '';
+    const text = (title + '. ' + body).replace(/\s+/g, ' ').trim();
+    if (!text) return;
+    const speak = () => {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'cs-CZ'; u.rate = 1;
+      const cs = synth.getVoices().find(v => /^cs/i.test(v.lang) || /Czech/i.test(v.name));
+      if (cs) u.voice = cs;
+      u.onend = u.onerror = () => { if (this._speakingId === blockId) { this._speakingId = null; this._updateSpeakBtns(); } };
+      this._speakingId = blockId;
+      synth.speak(u);
+      this._updateSpeakBtns();
+    };
+    // hlasy se u některých prohlížečů načítají async
+    if (!synth.getVoices().length) { synth.onvoiceschanged = () => { synth.onvoiceschanged = null; speak(); }; setTimeout(speak, 250); }
+    else speak();
+  }
+
+  _updateSpeakBtns() {
+    document.querySelectorAll('.bh-action-audio').forEach(b => {
+      b.classList.toggle('speaking', b.dataset.block === this._speakingId);
+    });
   }
 
   // End-of-block steering: ask AFTER the reader finished the telling.
@@ -1196,13 +1231,13 @@ class PBook {
   // ===== ONBOARDING TOUR =====
   startTour() {
     this._tourSteps = [
-      { target: '.tab[data-view="home"]', text: "\u{1F3E0} Tohle je tvůj Domov! Je to jako Netflix, ale na učení. Prohlédni si to a vyber, co tě zaujme.", pos: 'top' },
-      { target: '.tab[data-view="read"]', text: "\u{1F4F1} Feed! Prostě scrolluj — appka zjistí, co ti ukázat dál. Jako TikTok, ale doopravdy se něco naučíš.", pos: 'top' },
-      { target: '.tab[data-view="glossary"]', text: "\u{1F3AF} Mise! Každá je výprava s příběhem a závěrečným bossem — kvízem. Poraz bosse = získej titul!", pos: 'top' },
-      { target: '.tab[data-view="map"]', text: "\u{1F5FA} Mapa! Podívej se na celou knihu, uložené věci a poznámky. Klepni na kapitolu a skoč tam.", pos: 'top' },
-      { target: '.tab[data-view="quiz"]', text: "\u{1F9E0} Kvíz! Otestuj, co si pamatuješ. Kartičky jsou chytré — těžké se vrací častěji, snadné méně.", pos: 'top' },
+      { target: '.topnav-item[data-view="home"]', text: "\u{1F3E0} Tohle je tvůj Domov! Je to jako Netflix, ale na učení. Prohlédni si to a vyber, co tě zaujme.", pos: 'bottom' },
+      { target: '.topnav-item[data-view="read"]', text: "\u{1F4F1} Feed! Prostě scrolluj — appka zjistí, co ti ukázat dál. Jako TikTok, ale doopravdy se něco naučíš.", pos: 'bottom' },
+      { target: '.topnav-item[data-view="glossary"]', text: "\u{1F3AF} Mise! Každá je výprava s příběhem a závěrečným bossem — kvízem. Poraz bosse = získej titul!", pos: 'bottom' },
+      { target: '.topnav-item[data-view="map"]', text: "\u{1F5FA} Mapa! Podívej se na celou knihu, uložené věci a poznámky. Klepni na kapitolu a skoč tam.", pos: 'bottom' },
+      { target: '.topnav-item[data-view="quiz"]', text: "\u{1F9E0} Kvíz! Otestuj, co si pamatuješ. Kartičky jsou chytré — těžké se vrací častěji, snadné méně.", pos: 'bottom' },
       { target: '#xpBadge', text: "\u{1F31F} Tohle je tvůj level! Získáváš XP za čtení, mini-hry a dokončení misí. Leveluj a odemkni skvělé motivy!", pos: 'bottom' },
-      { target: null, text: "Vše je připraveno! Klepni na cokoliv, co vypadá zajímavě. Tuhle knihu nejde číst špatně. Když se ztratíš, klepni nahoře na \"p-book\" a vrátíš se sem. JDEME! \u{1F680}", pos: 'center' },
+      { target: null, text: "Vše je připraveno! Klepni na cokoliv, co vypadá zajímavě. Tuhle knihu nejde číst špatně. Když se ztratíš, klepni nahoře na \"pbook\" a vrátíš se sem. JDEME! \u{1F680}", pos: 'center' },
     ];
     this._tourIdx = 0;
     this._showTourStep();
@@ -1345,8 +1380,8 @@ class PBook {
     const viewEl = document.getElementById(`view-${view}`);
     if (viewEl) viewEl.classList.add('active');
 
-    // Update tab highlights
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
+    // Update tab highlights (bottom-nav legacy + new top-nav)
+    document.querySelectorAll('.tab, .topnav-item').forEach(t => t.classList.toggle('active', t.dataset.view === view));
     // Clear hash to prevent deep-link re-triggering on tab click
     if (!auto && window.location.hash) history.replaceState(null, '', window.location.pathname);
 
@@ -1705,6 +1740,91 @@ class PBook {
     this._applyTellingChoices();   // re-apply saved per-concept telling choices
     this._updateMissionBar();
     this._showMissionIntro();
+    this._renderReadToc();
+    this._setupTocSync();
+  }
+
+  // ===== LEVÝ TOC SIDEBAR (obsah knihy + scroll-sync) =====
+  _renderReadToc() {
+    const toc = document.getElementById('readToc');
+    if (!toc || !this.book) return;
+    let nav = '<nav class="toc-scroll" aria-label="Obsah">';
+    this.book.chapters.forEach((ch, ci) => {
+      const spines = (this.chapters[ci]?.blocks || []).filter(b => b.type === 'spine');
+      if (!spines.length) return;
+      nav += `<div class="toc-chapter">${ch.title}</div><ul class="toc-list">`;
+      for (const b of spines) {
+        const t = (b.title || '').replace(/</g, '&lt;');
+        nav += `<li class="toc-item" data-block-id="${b.id}"><a href="#${b.id}" onclick="event.preventDefault();app.openBlock('${b.id}','toc')" aria-current="false">${t}</a></li>`;
+      }
+      nav += '</ul>';
+    });
+    nav += '</nav>';
+    // Kontextové chatbot okénko — vždy viditelné dole, otázka se mění dle právě čtené podkapitoly
+    const card = `<div class="toc-quiz">
+      <div class="toc-quiz-label">Rychlý kvíz</div>
+      <div class="toc-quiz-q" id="tocQuizQ">Zeptej se na cokoliv z téhle části.</div>
+      <form class="toc-chat" onsubmit="return app.askFromCard(event)">
+        <input type="text" id="tocChatInput" placeholder="Napiš dotaz nebo odpověď…" aria-label="Zeptej se AI průvodce">
+        <button type="submit" aria-label="Odeslat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
+      </form>
+    </div>`;
+    toc.innerHTML = nav + card;
+    this._tocActiveId = null;
+  }
+
+  // Odeslání dotazu z kontextového okénka do AI průvodce
+  askFromCard(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const input = document.getElementById('tocChatInput');
+    const q = (input?.value || '').trim();
+    if (!q) return false;
+    input.value = '';
+    this.switchView('chat');
+    const full = document.getElementById('chatInputFull');
+    if (full) { full.value = q; this.sendFullChat(); }
+    return false;
+  }
+
+  _setupTocSync() {
+    if (this._tocScrollHandler) window.removeEventListener('scroll', this._tocScrollHandler);
+    let ticking = false;
+    this._tocScrollHandler = () => {
+      if (this.currentView !== 'read' || ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => { this._syncReadToc(); ticking = false; });
+    };
+    window.addEventListener('scroll', this._tocScrollHandler, { passive: true });
+    this._syncReadToc();
+  }
+
+  _syncReadToc() {
+    const toc = document.getElementById('readToc');
+    if (!toc) return;
+    const items = toc.querySelectorAll('.toc-item');
+    if (!items.length) return;
+    const offset = 160;
+    let activeId = null;
+    document.querySelectorAll('#readPane [id^="b-"]').forEach(el => {
+      if (el.getBoundingClientRect().top <= offset) activeId = el.id.slice(2);
+    });
+    if (activeId === this._tocActiveId) return;
+    this._tocActiveId = activeId;
+    let activeLi = null;
+    items.forEach(li => {
+      const on = li.dataset.blockId === activeId;
+      li.classList.toggle('active', on);
+      const a = li.querySelector('a');
+      if (a) a.setAttribute('aria-current', on ? 'true' : 'false');
+      if (on) activeLi = li;
+    });
+    if (activeLi) activeLi.scrollIntoView({ block: 'nearest' });
+    // kontextová otázka v chatbot okénku = právě čtená podkapitola
+    const qEl = document.getElementById('tocQuizQ');
+    if (qEl && activeId) {
+      const blk = this.findBlock(activeId);
+      if (blk?.meta?.title) qEl.textContent = blk.meta.title;
+    }
   }
 
   async _renderChapterContent(ch, idx) {
@@ -1969,20 +2089,34 @@ class PBook {
 
     return `<article class="block-article fade-up" id="b-${block.id}">
       ${overrideBar}
-      <div class="block-nav">
-        <button class="bnav-back" onclick="app.goBack()" title="Zpět">&larr;</button>
-        <span class="bnav-ch" onclick="app.goToMapChapter(${block._chapterIdx})">Kap. ${chNum}</span>
-        <span class="bnav-sep">&middot;</span>
-        <span class="bnav-progress">${posInCh}/${totalInCh}</span>
-        ${block.core ? '<span class="bnav-core">ZÁKLAD</span>' : ''}
-        <div class="block-status ${isRead ? 'read' : this.user.seenBlocks.has(block.id) ? 'seen' : ''}"></div>
-      </div>
-      <div class="block-header">
-        <h3>${block.title}</h3>
-        <div class="block-meta">
-          <span>${block.readingTime || 3} min čtení</span>
+      <header class="block-head">
+        <div class="bh-meta">
+          <button class="bnav-back" onclick="app.goBack()" title="Zpět" aria-label="Zpět">&larr;</button>
+          <span class="bh-chapter" onclick="app.goToMapChapter(${block._chapterIdx})">Kapitola ${chNum}</span>
+          <span class="bh-progress" aria-label="Článek ${posInCh} z ${totalInCh}">
+            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" fill="none" stroke="var(--grey25)" stroke-width="2"></circle>
+              <circle cx="12" cy="12" r="10" fill="none" stroke="var(--violet)" stroke-width="2" stroke-linecap="round"
+                stroke-dasharray="62.83" stroke-dashoffset="${(62.83 * (1 - posInCh / (totalInCh || 1))).toFixed(1)}" transform="rotate(-90 12 12)"></circle>
+            </svg>
+            <span>${posInCh}/${totalInCh}</span>
+          </span>
+          ${block.core ? '<span class="bnav-core">Základ</span>' : ''}
+          <span class="bh-time">${block.readingTime || 3} min čtení</span>
+          <div class="block-status ${isRead ? 'read' : this.user.seenBlocks.has(block.id) ? 'seen' : ''}"></div>
         </div>
-      </div>
+        <div class="bh-titlerow">
+          <div class="bh-titles">
+            <h3 class="bh-title">${block.title}</h3>
+            ${ch?.subtitle ? `<div class="bh-sub">${ch.subtitle}</div>` : ''}
+          </div>
+          <div class="bh-actions">
+            <button class="bh-action bh-action-audio" data-block="${block.id}" onclick="app.toggleSpeak('${block.id}')" title="Poslechnout článek" aria-label="Audioverze"><img src="/images/ic-audio.svg" alt="" width="22" height="24"></button>
+            <button class="bh-action" onclick="app.toggleTellings('${block.id}')" title="Fasety — hloubka a způsob podání" aria-label="Fasety"><img src="/images/ic-facets.svg" alt="" width="20" height="21"></button>
+            <button class="bh-action" onclick="app.steerBlock('${block.id}','deeper')" title="Chci vědět víc — hlubší verze" aria-label="Chci vědět víc"><img src="/images/ic-more.svg" alt="" width="17" height="24"></button>
+          </div>
+        </div>
+      </header>
       ${this._renderTellingsIndicator(block)}
       <div class="block-with-side">
         <div class="block-main">
@@ -3412,29 +3546,33 @@ class PBook {
 
     const summary = this.user.getSignalSummary();
 
+    const readMin = summary.dwellTotal > 60000 ? Math.round(summary.dwellTotal / 60000) : 0;
+    const statsLine = `${prog.read} přečteno · ${prog.seen} zhlédnuto${readMin ? ' · ' + readMin + ' min čtení' : ''} · ${prog.total} celkem`;
+
     let html = `<div class="map-header fade-up">
-      <h2 class="map-title">Mapa knihy</h2>
-      <div class="map-progress-summary">
-        <div class="map-progress-bar"><div class="map-progress-fill" style="width:${prog.pct}%"></div></div>
-        <span class="map-progress-text">${prog.read} přečteno &middot; ${prog.seen} zhlédnuto &middot; ${prog.total} celkem</span>
-      </div>
-      ${summary.views > 0 ? `<div class="map-signals-bar">
-        ${summary.reads > 0 ? `<span>&#128214; ${summary.reads} přečteno</span>` : ''}
-        ${summary.views > summary.reads ? `<span>&#128065; ${summary.views - summary.reads} zhlédnuto</span>` : ''}
-        ${summary.ratings > 0 ? `<span>&#128293; ${summary.ratings} hodnoceno</span>` : ''}
-        ${summary.saves > 0 ? `<span>&#128278; ${summary.saves} uloženo</span>` : ''}
-        ${summary.expands > 0 ? `<span>&#128295; ${summary.expands} prozkoumáno</span>` : ''}
-        ${summary.dwellTotal > 60000 ? `<span>&#9201; ${Math.round(summary.dwellTotal/60000)} min čtení</span>` : ''}
-      </div>` : ''}
+      <h2 class="map-title">Přehled obsahu a personalizace</h2>
+      <div class="map-stats-line">${statsLine}</div>
+      <div class="map-progress-bar"><div class="map-progress-fill" style="width:${prog.pct}%"></div></div>
       <div class="map-mode-toggle">
-        <button class="map-mode-btn ${mapMode === 'visual' ? 'active' : ''}" onclick="app.setMapMode('visual')">Vizuální</button>
-        <button class="map-mode-btn ${mapMode === 'list' ? 'active' : ''}" onclick="app.setMapMode('list')">Podrobný seznam</button>
-        ${this._f('steering') ? `<button class="map-mode-btn ${mapMode === 'coverage' ? 'active' : ''}" onclick="app.setMapMode('coverage')">🌱 Živá kniha</button>` : ''}
+        <button class="map-mode-btn ${mapMode === 'list' ? 'active' : ''}" onclick="app.setMapMode('list')">Podrobný přehled</button>
+        <button class="map-mode-btn ${mapMode === 'visual' ? 'active' : ''}" onclick="app.setMapMode('visual')">Vizuální přehled</button>
+        ${this._f('steering') ? `<button class="map-mode-btn ${mapMode === 'coverage' ? 'active' : ''}" onclick="app.setMapMode('coverage')">Personalizovat</button>` : ''}
         <button class="map-mode-btn ${mapMode === 'saved' ? 'active' : ''}" onclick="app.setMapMode('saved')">Uložené${this.user.savedBlocks.size ? ' (' + this.user.savedBlocks.size + ')' : ''}</button>
         <button class="map-mode-btn ${mapMode === 'notes' ? 'active' : ''}" onclick="app.setMapMode('notes')">Poznámky${this._getNoteCount() ? ' (' + this._getNoteCount() + ')' : ''}</button>
       </div>
-      <button class="map-reset-btn" onclick="app.resetAll()">Vynulovat postup</button>
     </div>`;
+
+    const resetBtn = `<button class="map-reset-btn" onclick="app.resetAll()">Vynulovat postup</button>`;
+    if (mapMode === 'list' || mapMode === 'visual') {
+      html += `<div class="map-band"><div class="map-legend">
+        <span class="ml-item"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#059669"/></svg> Přečteno</span>
+        <span class="ml-item"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#E7E5E4"/></svg> Nepřečteno</span>
+        <span class="ml-item"><span style="font-size:.65rem;font-weight:700;color:var(--accent);background:var(--accent-bg);padding:.1em .3em;border-radius:3px">ZÁKLAD</span> Povinné čtení</span>
+        <span class="ml-item"><span style="font-size:.65rem">\u{1F3AE}</span> Mini-hra</span>
+      </div>${resetBtn}</div>`;
+    } else {
+      html += `<div class="map-band map-band--end">${resetBtn}</div>`;
+    }
 
     if (mapMode === 'coverage') {
       html += '<div id="coverageMapWrap" class="fade-up"><div style="padding:1.5em;color:var(--text-3);font-size:.8rem">Mapuji živou knihu…</div></div>';
@@ -3464,14 +3602,6 @@ class PBook {
       this._vmapInitZoom();
       return;
     }
-
-    // List mode legend
-    html += `<div class="map-legend">
-      <span class="ml-item"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#059669"/></svg> Přečteno</span>
-      <span class="ml-item"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#E7E5E4"/></svg> Nepřečteno</span>
-      <span class="ml-item"><span style="font-size:.65rem;font-weight:700;color:var(--accent);background:var(--accent-bg);padding:.1em .3em;border-radius:3px">ZÁKLAD</span> Povinné čtení</span>
-      <span class="ml-item"><span style="font-size:.65rem">\u{1F3AE}</span> Mini-hra</span>
-    </div>`;
 
     // Chapter reading order — which chapters should come before which
     const chapterPrereqs = {
@@ -3641,18 +3771,19 @@ class PBook {
         const bg = pct === 0 ? 'var(--border)' : pct < 0.34 ? '#FDE68A' : pct < 0.85 ? '#A7F3D0' : '#6EE7B7';
         return `<span class="cov-heat" style="background:${bg}" title="${v}: ${n}/${chMetas.length} článků">${icons[v] || v[0]}</span>`;
       }).join('');
-      sections += `<details class="covmap-chapter-sec"><summary>Kap. ${ch.number} · ${this.escHtml(ch.title)}
+      sections += `<div class="covmap-chapter-sec">
+        <div class="covmap-ch-head">${this.escHtml(ch.title)}
           <span class="covmap-mini">${chMetas.length} článků</span>
-          <span class="cov-heatrow">${heat}</span></summary>
+          <span class="cov-heatrow">${heat}</span></div>
         <div style="overflow-x:auto"><table class="covmap">
           <tr><th></th>${values.map(v => `<th class="${v === myVal ? 'covmap-mylens' : ''}">${icons[v] || ''}<div>${v}</div></th>`).join('')}</tr>
           ${rows}
-        </table></div></details>`;
+        </table></div></div>`;
     }
 
     return `<div class="covmap-intro">
-        <div class="tellings-dims" style="margin-bottom:.4em">${Object.entries(DIM_LABELS).map(([d, l]) =>
-          `<button class="steer-chip ${d === dim ? 'dim-active' : ''}" onclick="app.setCovDim('${d}')">${l}</button>`).join('')}
+        <div class="covmap-dimbar">${Object.entries(DIM_LABELS).map(([d, l]) =>
+          `<button class="covmap-dim-btn ${d === dim ? 'active' : ''}" onclick="app.setCovDim('${d}')">${l}</button>`).join('')}
         </div>
         <p style="font-size:.78rem;margin-bottom:.3em">Každý článek živé knihy — <b>${totalArticles}</b> řádků; podle hodnoty:${values.map(v => ` ${icons[v] || v} <b>${coveringCount[v]}</b>`).join(' ·')}. ● značí hodnoty, které článek pokrývá — jeden článek jich může obsloužit víc${myVal && myVal !== this._facetDefault(dim) ? `; tvoje nastavení <b>${icons[myVal] || ''} ${myVal}</b> je zvýrazněné` : ''}. Klikni na řádek a čti; chybějící podání si vyžádáš nebo vygeneruješ přes 🎛 panel v každé části. Chybí ti celý <i>koncept</i>? <a href="#" onclick="event.preventDefault();app.proposeConcept()" style="color:var(--accent)">🌱 navrhni ho</a>.</p>
         <p style="font-size:.68rem;color:var(--text-3)">barva ● = stav: <span style="color:#7C3AED">■</span> jádro · <span style="color:#10B981">■</span> redakční · <span style="color:#D97706">■</span> čtenářský obsah (✨ tvoje / ⚡ sdílené)</p>
@@ -3818,82 +3949,53 @@ class PBook {
 
   // ===== VISUAL RPG MAP =====
   async renderVisualMap(visibleVoices) {
-    if (!this._visualMapData) {
-      try {
-        const res = await fetch('/content/visual-map-data.json');
-        this._visualMapData = await res.json();
-      } catch (e) {
-        return '<div style="padding:2em;text-align:center;color:var(--text-3)">Vizuální mapa se načítá…</div>';
-      }
-    }
-    const mapData = this._visualMapData;
-    const W = mapData.width || 1400, H = mapData.height || 900;
     const readSet = this.user.readBlocks;
     const savedSet = this.user.savedBlocks;
-    const readCount = mapData.items.filter(i => readSet.has(i.id)).length;
-    const coreCount = mapData.items.filter(i => i.core).length;
-    const coreRead = mapData.items.filter(i => i.core && readSet.has(i.id)).length;
 
-    // Filter bar
-    let html = `<div class="vmap-container">
-    <div class="vmap-toolbar" style="display:flex;gap:.4em;padding:.4em;flex-wrap:wrap;align-items:center;font-size:.72rem">
-      <button class="vmap-filter-btn active" data-filter="all" onclick="app._vmapFilter('all',this)">Vše (${mapData.items.length})</button>
-      <button class="vmap-filter-btn" data-filter="core" onclick="app._vmapFilter('core',this)">Základ (${coreCount})</button>
-      <button class="vmap-filter-btn" data-filter="unread" onclick="app._vmapFilter('unread',this)">Nepřečtené (${mapData.items.length - readCount})</button>
-      <button class="vmap-filter-btn" data-filter="read" onclick="app._vmapFilter('read',this)">Přečtené (${readCount})</button>
-      <span style="margin-left:auto;color:var(--text-3)">Kolečkem přiblížíš · tažením posouváš</span>
-    </div>
-    <div class="vmap-canvas" id="vmapCanvas" style="overflow:hidden;position:relative;border:1px solid var(--border);border-radius:8px;touch-action:none;cursor:grab">
-      <svg id="vmapSvg" viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
-      <rect width="${W}" height="${H}" fill="var(--bg)"/>`;
+    const chapters = [];
+    this.book.chapters.forEach((ch, ci) => {
+      const items = (this.chapters[ci]?.blocks || []).filter(b => b.type === 'spine' || b.type === 'game');
+      if (items.length) chapters.push({ id: ch.id, title: ch.title, number: ch.number, ci, items });
+    });
+    const N = chapters.length || 1;
+    const allItems = chapters.flatMap(c => c.items);
+    const readCount = allItems.filter(i => readSet.has(i.id)).length;
+    const coreCount = allItems.filter(i => i.core).length;
+    const coreRead = allItems.filter(i => i.core && readSet.has(i.id)).length;
+    const chColor = i => `hsl(${262 + Math.round(i * (78 / Math.max(N - 1, 1)))}, 58%, 54%)`;
 
-    // Edges (similarity lines)
-    if (mapData.edges) {
-      mapData.edges.forEach(e => {
-        html += `<line class="vmap-edge" x1="${e.fx}" y1="${e.fy}" x2="${e.tx}" y2="${e.ty}" stroke="var(--border)" stroke-width="0.5" opacity="0.3"/>`;
+    let tree = '';
+    chapters.forEach((c, idx) => {
+      let arts = '';
+      c.items.forEach(it => {
+        const isRead = readSet.has(it.id), isSaved = savedSet.has(it.id), isCore = it.core, isGame = it.type === 'game';
+        const cls = `mm-article${isCore ? ' vn-core' : ''}${isRead ? ' vn-read' : ''}${isSaved ? ' vn-saved' : ''}`;
+        arts += `<div class="${cls}" data-ch="${c.id}" onclick="app.openBlock('${it.id}')" title="${this.escHtml(it.title)}">`
+          + `<span class="mm-dot"></span>`
+          + `<span class="mm-a-title">${this.escHtml(it.title)}</span>`
+          + (isCore ? `<span class="mm-badge">ZÁKLAD</span>` : '')
+          + (isGame ? `<span class="mm-game">\u{1F3AE}</span>` : '')
+          + `</div>`;
       });
-    }
-
-    // Chapter labels
-    mapData.chapters.forEach(ch => {
-      html += `<text x="${ch.cx}" y="${ch.cy - 28}" text-anchor="middle" font-size="13" font-weight="800" fill="${ch.color}" opacity="0.25" letter-spacing="0.5" class="vmap-ch-label">${ch.title.toUpperCase()}</text>`;
-      html += `<text x="${ch.cx}" y="${ch.cy - 15}" text-anchor="middle" font-size="9" fill="${ch.color}" opacity="0.2">${ch.count} částí</text>`;
+      tree += `<div class="mm-chapter-block">
+        <div class="mm-chapter" onclick="app.goChapter(${c.ci})">
+          <span class="mm-ch-num" style="background:${chColor(idx)}">${c.number}</span>
+          <span class="mm-ch-title">${this.escHtml(c.title)}</span>
+        </div>
+        <div class="mm-articles">${arts}</div>
+      </div>`;
     });
 
-    // Items
-    mapData.items.forEach(item => {
-      const isRead = readSet.has(item.id);
-      const isSaved = savedSet.has(item.id);
-      const isCore = item.core;
-      const color = mapData.colors[item.chapter] || '#666';
-      const r = isCore ? 7 : 4;
-      const opacity = isRead ? '1.0' : isCore ? '0.65' : '0.3';
-      let stroke = '';
-      if (isSaved) stroke = `stroke="#f59e0b" stroke-width="2"`;
-      else if (isRead) stroke = `stroke="#10B981" stroke-width="1.5"`;
-      else if (isCore) stroke = `stroke="rgba(255,255,255,0.6)" stroke-width="1"`;
-      const t = this.escHtml(item.title.length > 35 ? item.title.substring(0, 33) + '…' : item.title);
-      const cls = `vmap-node${isCore ? ' vn-core' : ''}${isRead ? ' vn-read' : ''}${isSaved ? ' vn-saved' : ''}`;
-
-      html += `<g class="${cls}" data-id="${item.id}" data-ch="${item.chapter}" style="cursor:pointer" onclick="window.open('#${item.id}','_blank')">
-        <circle cx="${item.x}" cy="${item.y}" r="${r}" fill="${color}" opacity="${opacity}" ${stroke}/>
-        <text class="vmap-label" x="${item.x}" y="${item.y - r - 3}" text-anchor="middle" font-size="7.5" fill="var(--text-1)" opacity="${isCore ? '0.75' : '0'}" font-weight="${isCore ? '600' : '400'}">${t}</text>
-      </g>`;
-    });
-
-    html += `</svg></div>`;
-
-    // Legend
-    html += `<div style="display:flex;flex-wrap:wrap;gap:.3em .5em;padding:.4em .2em;font-size:.65rem;align-items:center">`;
-    mapData.chapters.forEach(ch => {
-      html += `<span class="vmap-ch-pill" data-ch="${ch.id}" onclick="app._vmapHighlightCh('${ch.id}')" style="display:inline-flex;align-items:center;gap:.2em;cursor:pointer;padding:.1em .4em;border-radius:10px;white-space:nowrap;border:1.5px solid transparent"><span style="width:7px;height:7px;border-radius:50%;background:${ch.color};display:inline-block;flex-shrink:0"></span>${ch.title}</span>`;
-    });
-    html += `</div>`;
-    html += `<div style="font-size:.65rem;color:var(--text-3);padding:0 .3em .3em;display:flex;gap:.8em;flex-wrap:wrap">
-      <span>Postup: ${readCount}/${mapData.items.length} přečteno · ${coreRead}/${coreCount} základ</span>
-      <span>◉ základ · <span style="color:#10B981">◉</span> přečtené · <span style="color:#f59e0b">◉</span> uložené</span>
-    </div></div>`;
-    return html;
+    return `<div class="mindmap">
+      <div class="mm-toolbar">
+        <button class="mm-filter active" data-filter="all" onclick="app._vmapFilter('all',this)">Vše (${allItems.length})</button>
+        <button class="mm-filter" data-filter="core" onclick="app._vmapFilter('core',this)">Základ (${coreCount})</button>
+        <button class="mm-filter" data-filter="unread" onclick="app._vmapFilter('unread',this)">Nepřečtené (${allItems.length - readCount})</button>
+        <button class="mm-filter" data-filter="read" onclick="app._vmapFilter('read',this)">Přečtené (${readCount})</button>
+      </div>
+      <div class="mm-tree">${tree}</div>
+      <div class="mm-foot">Postup: ${readCount}/${allItems.length} přečteno &middot; ${coreRead}/${coreCount} základ</div>
+    </div>`;
   }
 
   // Visual map interactions — zoom, pan, pinch (desktop + mobile)
@@ -4006,9 +4108,9 @@ class PBook {
   }
 
   _vmapFilter(filter, btn) {
-    document.querySelectorAll('.vmap-filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.vmap-filter-btn, .mm-filter').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    document.querySelectorAll('.vmap-node').forEach(g => {
+    document.querySelectorAll('.vmap-node, .mm-article').forEach(g => {
       const isCore = g.classList.contains('vn-core');
       const isRead = g.classList.contains('vn-read');
       let show = true;
@@ -6526,15 +6628,20 @@ class PBook {
     el.style.display = '';
     const reward = this.getLevelRewards().filter(r => r.level <= this.user.level).pop();
     const editor = this.getEditorTrack?.().tier === 'editor' ? '🛠 ' : '';
-    el.textContent = editor + (reward?.icon || '') + ' Úr. ' + this.user.level + ' · ' + this.user.xp + ' XP';
+    const lvlText = editor + (reward?.icon ? reward.icon + ' ' : '') + 'Úroveň ' + this.user.level;
+    el.innerHTML = `<span class="pb-pill-level"></span><span class="pb-pill-xp"></span>`;
+    el.querySelector('.pb-pill-level').textContent = lvlText;
+    el.querySelector('.pb-pill-xp').textContent = this.user.xp + ' XP';
     el.title = editor ? 'Redaktor — vysloužený přijatými příspěvky' : '';
     // Apply cosmetic theme
     this._applyLevelTheme();
-    // Update quiz tab badge
-    const quizTab = document.querySelector('.tab[data-view="quiz"] .tab-label');
-    if (quizTab && this._f('spaceRepetition')) {
+    // Update quiz menu badge (top-nav + legacy bottom-nav label)
+    if (this._f('spaceRepetition')) {
       const dueCount = this.user.getDueRecalls().length;
-      quizTab.textContent = dueCount > 0 ? `Kvíz (${dueCount})` : 'Kvíz';
+      const quizItem = document.querySelector('.topnav-item[data-view="quiz"]');
+      if (quizItem) quizItem.textContent = dueCount > 0 ? `Kvízy (${dueCount})` : 'Kvízy';
+      const quizTab = document.querySelector('.tab[data-view="quiz"] .tab-label');
+      if (quizTab) quizTab.textContent = dueCount > 0 ? `Kvíz (${dueCount})` : 'Kvíz';
     }
   }
 

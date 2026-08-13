@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>pbook — redesign (náhled čtecí stránky)</title>
+<meta name="robots" content="noindex">
+<!-- Fonty z Figmy: Alegreya (serif, obsah) + Istok Web (sans, UI). latin-ext kvůli češtině, font-display: swap. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,700;0,800&family=Istok+Web:wght@400;700&display=swap&subset=latin-ext" rel="stylesheet">
+<style>
+/* =========================================================================
+   pbook redesign — design tokeny z Figmy (file 01yQTQ2aTXKf9f8T41sz31, frame 1:2)
+   Náhledová stránka. NEZASAHUJE do živé aplikace — čistě vizuální prototyp,
+   na kterém sladíme grafiku, než ji zapojíme do js/app.js.
+   ========================================================================= */
+:root {
+  /* Barvy */
+  --pb-white:      #FFFFFF;
+  --pb-grey5:      #F7F7F7;   /* pozadí sidebaru */
+  --pb-grey25:     #BDBDBD;   /* neaktivní tečky, jemné bordery */
+  --pb-grey50:     #858585;   /* sekundární / meta text (jen ≥14px allcaps) */
+  --pb-grey50-aa:  #6B6B6B;   /* tmavší varianta pro delší sekundární text (WCAG AA ~5:1) */
+  --pb-black:      #000000;
+  --pb-pink:       #DF46A2;   /* akcent: podtitul, XP, kvíz */
+  --pb-violet:     #873BE4;   /* akcent: TOC nadpisy, aktivní TOC, Úroveň */
+  --pb-dark-blue:  #2B3F6C;   /* doplňkový akcent (infografiky) */
+
+  /* Gradienty (odečteno z Figma design contextu) */
+  --pb-gradient-1:     linear-gradient(34deg, #873BE4 15%, #DF46A2 89%);      /* FAB, pilulky */
+  --pb-gradient-light: linear-gradient(43deg, #EFE3FF 15%, #FFE4F5 89%);      /* karta kvízu */
+
+  /* Typografie */
+  --pb-serif: 'Alegreya', Georgia, 'Times New Roman', serif;
+  --pb-sans:  'Istok Web', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Rozměry (z Figmy) */
+  --pb-topbar-h: 83px;
+  --pb-sidebar-w: 537px;
+  --pb-content-w: 668px;
+  --pb-radius: 10px;
+  --pb-radius-lg: 14px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--pb-sans);
+  color: var(--pb-black);
+  background: var(--pb-white);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================== TOP BAR ============================== */
+.pb-topbar {
+  position: sticky; top: 0; z-index: 50;
+  height: var(--pb-topbar-h);
+  background: var(--pb-white);
+  border-bottom: 1px solid var(--pb-grey25);
+  display: flex; align-items: center;
+  gap: 24px;
+  padding: 0 34px;
+}
+.pb-logo {
+  font-family: var(--pb-sans);
+  font-weight: 700;
+  font-size: 30px;
+  letter-spacing: -0.02em;
+  color: var(--pb-black);
+  text-decoration: none;
+  flex: 0 0 auto;
+}
+.pb-search {
+  flex: 0 1 354px;
+  height: 39px;
+  border: 1px solid var(--pb-grey25);
+  border-radius: var(--pb-radius);
+  padding: 0 16px;
+  font-family: var(--pb-sans);
+  font-size: 16px;
+  color: var(--pb-black);
+  background: var(--pb-white);
+}
+.pb-search::placeholder { color: var(--pb-grey50); }
+.pb-nav {
+  display: flex; gap: 34px; align-items: center;
+  margin-left: 8px;
+}
+.pb-nav a {
+  font-family: var(--pb-sans);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--pb-black);
+  text-decoration: none;
+  padding: 4px 0;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+.pb-nav a:hover { color: var(--pb-violet); }
+.pb-nav a.active { color: var(--pb-violet); border-bottom-color: var(--pb-violet); }
+.pb-spacer { flex: 1 1 auto; }
+.pb-pill {
+  font-family: var(--pb-sans);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--pb-white);
+  border-radius: var(--pb-radius);
+  padding: 5px 12px;
+  white-space: nowrap;
+}
+.pb-pill--level { background: var(--pb-gradient-1); }
+.pb-pill--xp    { background: var(--pb-pink); }
+.pb-avatar {
+  width: 50px; height: 50px; border-radius: 50%;
+  background: linear-gradient(135deg, #BDBDBD, #858585);
+  flex: 0 0 auto;
+  border: none;
+}
+
+/* ============================== LAYOUT ============================== */
+.pb-shell {
+  display: grid;
+  grid-template-columns: var(--pb-sidebar-w) 1fr;
+  align-items: start;
+}
+@media (max-width: 1280px) { .pb-shell { grid-template-columns: 320px 1fr; } }
+
+/* ============================== SIDEBAR ============================== */
+.pb-sidebar {
+  position: sticky; top: var(--pb-topbar-h);
+  height: calc(100vh - var(--pb-topbar-h));
+  overflow-y: auto;
+  background: var(--pb-grey5);
+  border-right: 1px solid var(--pb-grey25);
+  padding: 26px 36px 32px;
+}
+.pb-toc-chapter {
+  font-family: var(--pb-sans);
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--pb-violet);
+  margin: 22px 0 14px;
+}
+.pb-toc-chapter:first-child { margin-top: 0; }
+.pb-toc {
+  list-style: none; margin: 0; padding: 0;
+  position: relative;
+}
+/* svislá timeline linka */
+.pb-toc::before {
+  content: ""; position: absolute;
+  left: 8px; top: 10px; bottom: 10px;
+  width: 1px; background: var(--pb-grey25);
+}
+.pb-toc li { position: relative; padding: 6px 0 6px 28px; }
+.pb-toc li::before {
+  content: ""; position: absolute;
+  left: 4px; top: 50%; transform: translateY(-50%);
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--pb-grey25);
+  box-shadow: 0 0 0 3px var(--pb-grey5);
+}
+.pb-toc a {
+  font-family: var(--pb-sans);
+  font-size: 18px;
+  color: var(--pb-grey50);
+  text-decoration: none;
+  line-height: 1.25;
+  transition: color .15s;
+}
+.pb-toc a:hover { color: var(--pb-violet); }
+.pb-toc li.active::before {
+  width: 17px; height: 17px;
+  left: 0;
+  background: var(--pb-violet);
+}
+.pb-toc li.active { padding-left: 28px; }
+.pb-toc li.active a { color: var(--pb-black); font-weight: 700; }
+
+/* karta Rychlý kvíz */
+.pb-quiz {
+  margin-top: 30px;
+  background: var(--pb-gradient-light);
+  border: 1px solid var(--pb-white);
+  border-radius: var(--pb-radius);
+  padding: 22px 24px 20px;
+}
+.pb-quiz__label {
+  font-family: var(--pb-sans);
+  font-size: 14px; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--pb-pink);
+  margin: 0 0 10px;
+}
+.pb-quiz__q {
+  font-family: var(--pb-serif);
+  font-weight: 700; font-size: 25px;
+  color: var(--pb-black);
+  margin: 0 0 18px; line-height: 1.15;
+}
+.pb-quiz__form {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--pb-white);
+  border-radius: var(--pb-radius);
+  padding: 6px 6px 6px 16px;
+}
+.pb-quiz__form input {
+  flex: 1; border: none; outline: none; background: transparent;
+  font-family: var(--pb-sans); font-size: 16px;
+}
+.pb-quiz__send {
+  width: 30px; height: 30px; border-radius: var(--pb-radius);
+  background: var(--pb-pink); border: none; cursor: pointer;
+  display: grid; place-items: center; flex: 0 0 auto;
+}
+
+/* ============================== ČLÁNEK ============================== */
+.pb-article {
+  padding: 40px 60px 120px;
+  max-width: calc(var(--pb-content-w) + 120px);
+}
+.pb-meta {
+  display: flex; align-items: center; gap: 12px;
+  font-family: var(--pb-sans); font-size: 14px;
+  text-transform: uppercase; color: var(--pb-grey50);
+  letter-spacing: 0.02em;
+  margin-bottom: 18px;
+}
+.pb-progress-ring { display: inline-flex; }
+.pb-article__head { display: flex; align-items: flex-start; gap: 20px; }
+.pb-article__titles { flex: 1; min-width: 0; }
+.pb-h1 {
+  font-family: var(--pb-serif);
+  font-weight: 700; font-size: 32px;
+  color: var(--pb-black); margin: 0 0 8px; line-height: 1.1;
+}
+.pb-subtitle {
+  font-family: var(--pb-sans); font-size: 18px;
+  color: var(--pb-pink); margin: 0;
+}
+.pb-actions { display: flex; gap: 16px; padding-top: 6px; }
+.pb-action {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: none; background: transparent; cursor: pointer;
+  color: var(--pb-violet);
+  display: grid; place-items: center;
+  transition: background .15s;
+}
+.pb-action:hover { background: rgba(135,59,228,.1); }
+.pb-action svg { width: 24px; height: 24px; }
+
+.pb-figure {
+  margin: 28px 0;
+  border: 1px solid var(--pb-grey25);
+  border-radius: var(--pb-radius);
+  background: var(--pb-grey5);
+  aspect-ratio: 668 / 353;
+  display: grid; place-items: center;
+  color: var(--pb-dark-blue);
+  font-family: var(--pb-sans); font-size: 15px;
+  text-align: center;
+}
+.pb-body {
+  font-family: var(--pb-serif);
+  font-size: 22px; line-height: 1.45;
+  color: var(--pb-black);
+  max-width: var(--pb-content-w);
+}
+.pb-body p { margin: 0 0 1em; }
+.pb-body ul { margin: 0 0 1em; padding-left: 1.4em; }
+.pb-body li { margin-bottom: .3em; }
+
+/* ============================== FAB CHATBOT ============================== */
+.pb-fab {
+  position: fixed; right: 34px; bottom: 34px; z-index: 60;
+  width: 78px; height: 78px; border-radius: 50%;
+  background: var(--pb-gradient-1);
+  border: none; cursor: pointer;
+  display: grid; place-items: center;
+  color: var(--pb-white);
+  box-shadow: 0 8px 24px rgba(135,59,228,.35);
+  transition: transform .15s;
+}
+.pb-fab:hover { transform: scale(1.06); }
+.pb-fab svg { width: 30px; height: 30px; }
+
+/* Náhledová lišta nahoře stránky (jen pro tento prototyp) */
+.pb-note {
+  background: #FFF8E1; border-bottom: 1px solid #F0E0A0;
+  font-family: var(--pb-sans); font-size: 13px; color: #6B5A00;
+  padding: 8px 34px; text-align: center;
+}
+</style>
+</head>
+<body>
+
+<div class="pb-note">Náhled redesignu — samostatný prototyp, živá aplikace zůstává beze změny. Sladíme vizuál, pak zapojíme do appky.</div>
+
+<!-- ============================== TOP BAR ============================== -->
+<header class="pb-topbar">
+  <a href="#" class="pb-logo">pbook</a>
+  <input class="pb-search" type="search" placeholder="Hledej…" aria-label="Hledat">
+  <nav class="pb-nav" aria-label="Hlavní menu">
+    <a href="#">Procházet</a>
+    <a href="#" class="active">Číst</a>
+    <a href="#">Mapa</a>
+    <a href="#">Mise</a>
+    <a href="#">Kvízy</a>
+  </nav>
+  <span class="pb-spacer"></span>
+  <span class="pb-pill pb-pill--level">Úroveň 2</span>
+  <span class="pb-pill pb-pill--xp">60 XP</span>
+  <button class="pb-avatar" aria-label="Profil"></button>
+</header>
+
+<!-- ============================== LAYOUT ============================== -->
+<div class="pb-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="pb-sidebar">
+    <nav aria-label="Obsah">
+      <h2 class="pb-toc-chapter">Jak vypadá internet</h2>
+      <ul class="pb-toc">
+        <li><a href="#">Kde je to všechno uloženo?</a></li>
+        <li><a href="#">Klient a server: kdo komu slouží</a></li>
+        <li class="active"><a href="#" aria-current="true">Počítáme: kolik mobilů je YouTube</a></li>
+        <li><a href="#">Kabely přes půl světa</a></li>
+        <li><a href="#">Prozkoumej dno oceánu</a></li>
+        <li><a href="#">Routery: chytré křižovatky</a></li>
+        <li><a href="#">Pakety: jak poslat dinosaura</a></li>
+        <li><a href="#">Co je uvnitř paketu</a></li>
+        <li><a href="#">Nakresli svou domácí síť</a></li>
+        <li><a href="#">Traceroute: vypiš si routery po cestě</a></li>
+        <li><a href="#">Internet nemá ředitele</a></li>
+        <li><a href="#">Hra: Když se přeruší kabel</a></li>
+        <li><a href="#">Hra: Cesta zprávy internetem</a></li>
+        <li><a href="#">Co už víš o internetu</a></li>
+        <li><a href="#">Komiks: Chci mluvit s ředitelem internetu!</a></li>
+      </ul>
+
+      <h2 class="pb-toc-chapter">Jak se připojujeme</h2>
+      <ul class="pb-toc">
+        <li><a href="#">Wi-Fi a router: odkud se bere signál</a></li>
+        <li><a href="#">Přenosová rychlost, ping a jitter</a></li>
+      </ul>
+    </nav>
+
+    <!-- Karta Rychlý kvíz -->
+    <section class="pb-quiz" aria-label="Rychlý kvíz">
+      <p class="pb-quiz__label">Rychlý kvíz</p>
+      <h3 class="pb-quiz__q">Kolik mobilů je YouTube?</h3>
+      <form class="pb-quiz__form" onsubmit="return false">
+        <input type="text" placeholder="Tvoje odpověď…" aria-label="Odpověď na kvíz">
+        <button class="pb-quiz__send" aria-label="Odeslat odpověď">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+      </form>
+    </section>
+  </aside>
+
+  <!-- ČLÁNEK -->
+  <main class="pb-article">
+    <div class="pb-meta">
+      <span>Kapitola 1</span>
+      <span class="pb-progress-ring" aria-label="Článek 1 ze 3">
+        <svg width="24" height="24" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" fill="none" stroke="#BDBDBD" stroke-width="2"></circle>
+          <circle cx="12" cy="12" r="10" fill="none" stroke="#873BE4" stroke-width="2"
+                  stroke-dasharray="62.8" stroke-dashoffset="41.9" transform="rotate(-90 12 12)" stroke-linecap="round"></circle>
+        </svg>
+      </span>
+      <span>1/3</span>
+      <span>·</span>
+      <span>2 minuty čtení</span>
+    </div>
+
+    <div class="pb-article__head">
+      <div class="pb-article__titles">
+        <h1 class="pb-h1">Počítáme: kolik mobilů je YouTube</h1>
+        <p class="pb-subtitle">Servery, kabely a chytré křižovatky</p>
+      </div>
+      <div class="pb-actions">
+        <!-- Audio verze -->
+        <button class="pb-action" aria-label="Přehrát audioverzi" title="Audioverze">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+        </button>
+        <!-- Fasety -->
+        <button class="pb-action" aria-label="Nastavení hloubky a vizuálnosti (fasety)" title="Fasety">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+        <!-- Chci vědět víc -->
+        <button class="pb-action" aria-label="Chci vědět víc — hlubší verze článku" title="Chci vědět víc">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="pb-figure">Infografika „Kde bydlí data? Datová centra světa"<br>(placeholder — sem přijde původní obrázek/diagram)</div>
+
+    <div class="pb-body">
+      <p>Když jsi připojený k internetu, můžeš si psát s kamarády, sledovat videa, hrát online hry nebo si vyhledávat informace. Ale napadlo tě někdy, kde je to všechno uloženo? Videa přece nejsou ve tvém mobilu. Zkusme si to spočítat na YouTube:</p>
+      <ul>
+        <li>Na YouTube je zhruba 800 milionů videí.</li>
+        <li>Jedno video zabere v paměti průměrně 1 GB.</li>
+        <li>Dohromady je to asi 800 000 000 GB dat.</li>
+        <li>Tvůj mobil má přitom paměť typicky jen 32 až 128 GB.</li>
+      </ul>
+    </div>
+  </main>
+</div>
+
+<!-- FAB CHATBOT -->
+<button class="pb-fab" aria-label="Otevřít chatbota">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+</button>
+
+</body>
+</html>
