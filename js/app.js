@@ -1749,24 +1749,42 @@ class PBook {
   _renderReadToc() {
     const toc = document.getElementById('readToc');
     if (!toc || !this.book) return;
-    let h = '<nav aria-label="Obsah">';
+    let nav = '<nav class="toc-scroll" aria-label="Obsah">';
     this.book.chapters.forEach((ch, ci) => {
       const spines = (this.chapters[ci]?.blocks || []).filter(b => b.type === 'spine');
       if (!spines.length) return;
-      h += `<div class="toc-chapter">${ch.title}</div><ul class="toc-list">`;
+      nav += `<div class="toc-chapter">${ch.title}</div><ul class="toc-list">`;
       for (const b of spines) {
         const t = (b.title || '').replace(/</g, '&lt;');
-        h += `<li class="toc-item" data-block-id="${b.id}"><a href="#${b.id}" onclick="event.preventDefault();app.openBlock('${b.id}','toc')" aria-current="false">${t}</a></li>`;
+        nav += `<li class="toc-item" data-block-id="${b.id}"><a href="#${b.id}" onclick="event.preventDefault();app.openBlock('${b.id}','toc')" aria-current="false">${t}</a></li>`;
       }
-      h += '</ul>';
+      nav += '</ul>';
     });
-    h += '</nav>';
-    // Karta Rychlý kvíz (zatím otevře stávající kvízovou sekci; kontextovost dodáme ve fázi featur)
-    if (this._f('spaceRepetition')) {
-      h += `<div class="toc-quiz"><div class="toc-quiz-label">Rychlý kvíz</div><div class="toc-quiz-q">Otestuj, co si pamatuješ z téhle kapitoly.</div><button class="toc-quiz-btn" onclick="app.switchView('quiz')">Spustit kvíz →</button></div>`;
-    }
-    toc.innerHTML = h;
+    nav += '</nav>';
+    // Kontextové chatbot okénko — vždy viditelné dole, otázka se mění dle právě čtené podkapitoly
+    const card = `<div class="toc-quiz">
+      <div class="toc-quiz-label">Rychlý kvíz</div>
+      <div class="toc-quiz-q" id="tocQuizQ">Zeptej se na cokoliv z téhle části.</div>
+      <form class="toc-chat" onsubmit="return app.askFromCard(event)">
+        <input type="text" id="tocChatInput" placeholder="Napiš dotaz nebo odpověď…" aria-label="Zeptej se AI průvodce">
+        <button type="submit" aria-label="Odeslat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
+      </form>
+    </div>`;
+    toc.innerHTML = nav + card;
     this._tocActiveId = null;
+  }
+
+  // Odeslání dotazu z kontextového okénka do AI průvodce
+  askFromCard(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const input = document.getElementById('tocChatInput');
+    const q = (input?.value || '').trim();
+    if (!q) return false;
+    input.value = '';
+    this.switchView('chat');
+    const full = document.getElementById('chatInputFull');
+    if (full) { full.value = q; this.sendFullChat(); }
+    return false;
   }
 
   _setupTocSync() {
@@ -1802,6 +1820,12 @@ class PBook {
       if (on) activeLi = li;
     });
     if (activeLi) activeLi.scrollIntoView({ block: 'nearest' });
+    // kontextová otázka v chatbot okénku = právě čtená podkapitola
+    const qEl = document.getElementById('tocQuizQ');
+    if (qEl && activeId) {
+      const blk = this.findBlock(activeId);
+      if (blk?.meta?.title) qEl.textContent = blk.meta.title;
+    }
   }
 
   async _renderChapterContent(ch, idx) {
