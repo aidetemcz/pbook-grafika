@@ -3554,7 +3554,7 @@ class PBook {
       <div class="map-stats-line">${statsLine}</div>
       <div class="map-progress-bar"><div class="map-progress-fill" style="width:${prog.pct}%"></div></div>
       <div class="map-mode-toggle">
-        <button class="map-mode-btn ${mapMode === 'visual' ? 'active' : ''}" onclick="app.setMapMode('visual')">Vizuální</button>
+        <button class="map-mode-btn ${mapMode === 'visual' ? 'active' : ''}" onclick="app.setMapMode('visual')">Vizuální přehled</button>
         <button class="map-mode-btn ${mapMode === 'list' ? 'active' : ''}" onclick="app.setMapMode('list')">Podrobný seznam</button>
         ${this._f('steering') ? `<button class="map-mode-btn ${mapMode === 'coverage' ? 'active' : ''}" onclick="app.setMapMode('coverage')">Personalizovat</button>` : ''}
         <button class="map-mode-btn ${mapMode === 'saved' ? 'active' : ''}" onclick="app.setMapMode('saved')">Uložené${this.user.savedBlocks.size ? ' (' + this.user.savedBlocks.size + ')' : ''}</button>
@@ -3946,80 +3946,103 @@ class PBook {
 
   // ===== VISUAL RPG MAP =====
   async renderVisualMap(visibleVoices) {
-    if (!this._visualMapData) {
-      try {
-        const res = await fetch('/content/visual-map-data.json');
-        this._visualMapData = await res.json();
-      } catch (e) {
-        return '<div style="padding:2em;text-align:center;color:var(--text-3)">Vizuální mapa se načítá…</div>';
-      }
-    }
-    const mapData = this._visualMapData;
-    const W = mapData.width || 1400, H = mapData.height || 900;
     const readSet = this.user.readBlocks;
     const savedSet = this.user.savedBlocks;
-    const readCount = mapData.items.filter(i => readSet.has(i.id)).length;
-    const coreCount = mapData.items.filter(i => i.core).length;
-    const coreRead = mapData.items.filter(i => i.core && readSet.has(i.id)).length;
 
-    // Filter bar
-    let html = `<div class="vmap-container">
-    <div class="vmap-toolbar" style="display:flex;gap:.4em;padding:.4em;flex-wrap:wrap;align-items:center;font-size:.72rem">
-      <button class="vmap-filter-btn active" data-filter="all" onclick="app._vmapFilter('all',this)">Vše (${mapData.items.length})</button>
-      <button class="vmap-filter-btn" data-filter="core" onclick="app._vmapFilter('core',this)">Základ (${coreCount})</button>
-      <button class="vmap-filter-btn" data-filter="unread" onclick="app._vmapFilter('unread',this)">Nepřečtené (${mapData.items.length - readCount})</button>
-      <button class="vmap-filter-btn" data-filter="read" onclick="app._vmapFilter('read',this)">Přečtené (${readCount})</button>
-      <span style="margin-left:auto;color:var(--text-3)">Kolečkem přiblížíš · tažením posouváš</span>
-    </div>
-    <div class="vmap-canvas" id="vmapCanvas" style="overflow:hidden;position:relative;border:1px solid var(--border);border-radius:8px;touch-action:none;cursor:grab">
-      <svg id="vmapSvg" viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
-      <rect width="${W}" height="${H}" fill="var(--bg)"/>`;
-
-    // Edges (similarity lines)
-    if (mapData.edges) {
-      mapData.edges.forEach(e => {
-        html += `<line class="vmap-edge" x1="${e.fx}" y1="${e.fy}" x2="${e.tx}" y2="${e.ty}" stroke="var(--border)" stroke-width="0.5" opacity="0.3"/>`;
-      });
-    }
-
-    // Chapter labels
-    mapData.chapters.forEach(ch => {
-      html += `<text x="${ch.cx}" y="${ch.cy - 28}" text-anchor="middle" font-size="13" font-weight="800" fill="${ch.color}" opacity="0.25" letter-spacing="0.5" class="vmap-ch-label">${ch.title.toUpperCase()}</text>`;
-      html += `<text x="${ch.cx}" y="${ch.cy - 15}" text-anchor="middle" font-size="9" fill="${ch.color}" opacity="0.2">${ch.count} částí</text>`;
+    // Build the tree straight from the book — center → chapters → articles.
+    const chapters = [];
+    this.book.chapters.forEach((ch, ci) => {
+      const items = (this.chapters[ci]?.blocks || []).filter(b => b.type === 'spine' || b.type === 'game');
+      if (items.length) chapters.push({ id: ch.id, title: ch.title, number: ch.number, items });
     });
+    const N = chapters.length || 1;
+    const allItems = chapters.flatMap(c => c.items);
+    const readCount = allItems.filter(i => readSet.has(i.id)).length;
+    const coreCount = allItems.filter(i => i.core).length;
+    const coreRead = allItems.filter(i => i.core && readSet.has(i.id)).length;
+    // Per-chapter colour, kept in the brand's violet→pink hue range.
+    const chColor = i => `hsl(${262 + Math.round(i * (78 / Math.max(N - 1, 1)))}, 58%, 54%)`;
 
-    // Items
-    mapData.items.forEach(item => {
-      const isRead = readSet.has(item.id);
-      const isSaved = savedSet.has(item.id);
-      const isCore = item.core;
-      const color = mapData.colors[item.chapter] || '#666';
-      const r = isCore ? 7 : 4;
-      const opacity = isRead ? '1.0' : isCore ? '0.65' : '0.3';
-      let stroke = '';
-      if (isSaved) stroke = `stroke="#f59e0b" stroke-width="2"`;
-      else if (isRead) stroke = `stroke="#10B981" stroke-width="1.5"`;
-      else if (isCore) stroke = `stroke="rgba(255,255,255,0.6)" stroke-width="1"`;
-      const t = this.escHtml(item.title.length > 35 ? item.title.substring(0, 33) + '…' : item.title);
-      const cls = `vmap-node${isCore ? ' vn-core' : ''}${isRead ? ' vn-read' : ''}${isSaved ? ' vn-saved' : ''}`;
+    const W = 1700, H = 1120, CX = W / 2, CY = H / 2;
+    const R1 = 250, R2 = 430;
 
-      html += `<g class="${cls}" data-id="${item.id}" data-ch="${item.chapter}" style="cursor:pointer" onclick="window.open('#${item.id}','_blank')">
-        <circle cx="${item.x}" cy="${item.y}" r="${r}" fill="${color}" opacity="${opacity}" ${stroke}/>
-        <text class="vmap-label" x="${item.x}" y="${item.y - r - 3}" text-anchor="middle" font-size="7.5" fill="var(--text-1)" opacity="${isCore ? '0.75' : '0'}" font-weight="${isCore ? '600' : '400'}">${t}</text>
+    let branches = '', chNodes = '', itemNodes = '';
+    chapters.forEach((c, ci) => {
+      const theta = -Math.PI / 2 + ci * (2 * Math.PI / N);
+      const cx = CX + R1 * Math.cos(theta), cy = CY + R1 * Math.sin(theta);
+      const color = chColor(ci);
+      // trunk: centre → chapter
+      const mx = CX + R1 * 0.5 * Math.cos(theta), my = CY + R1 * 0.5 * Math.sin(theta);
+      branches += `<path d="M ${CX.toFixed(1)} ${CY.toFixed(1)} Q ${mx.toFixed(1)} ${my.toFixed(1)} ${cx.toFixed(1)} ${cy.toFixed(1)}" fill="none" stroke="${color}" stroke-width="3" opacity="0.55"/>`;
+
+      // articles fanned inside the chapter's angular sector
+      const M = c.items.length;
+      const sector = (2 * Math.PI / N) * 0.82;
+      c.items.forEach((it, j) => {
+        const frac = M > 1 ? (j / (M - 1)) - 0.5 : 0;
+        const ang = theta + frac * sector;
+        const rr = R2 + (j % 2 ? 30 : 0);
+        const x = CX + rr * Math.cos(ang), y = CY + rr * Math.sin(ang);
+        const isRead = readSet.has(it.id), isSaved = savedSet.has(it.id), isCore = it.core;
+        const rad = isCore ? 6.5 : 5;
+        let stroke = '';
+        if (isSaved) stroke = 'stroke="#f59e0b" stroke-width="2.5"';
+        else if (isRead) stroke = 'stroke="#059669" stroke-width="2"';
+        // branch: chapter → article
+        branches += `<line x1="${cx.toFixed(1)}" y1="${cy.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${color}" stroke-width="1.2" opacity="0.3"/>`;
+        // label points outward from the centre
+        const right = Math.cos(ang) >= 0;
+        const lx = x + (right ? rad + 6 : -(rad + 6));
+        const anchor = right ? 'start' : 'end';
+        const label = this.escHtml(it.title.length > 30 ? it.title.slice(0, 28) + '…' : it.title);
+        const cls = `vmap-node${isCore ? ' vn-core' : ''}${isRead ? ' vn-read' : ''}${isSaved ? ' vn-saved' : ''}`;
+        itemNodes += `<g class="${cls}" data-id="${it.id}" data-ch="${c.id}" style="cursor:pointer" onclick="app.openBlock('${it.id}')">
+          <title>${this.escHtml(it.title)}</title>
+          <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rad}" fill="${color}" opacity="${isRead ? 1 : isCore ? 0.9 : 0.6}" ${stroke}/>
+          <text class="vmap-label" x="${lx.toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="${anchor}" font-size="10" fill="#222222" opacity="${isRead || isCore ? 0.85 : 0.55}" font-weight="${isCore ? 600 : 400}">${label}</text>
+        </g>`;
+      });
+
+      // chapter node + inward label
+      const lr = R1 - 42, lx = CX + lr * Math.cos(theta), ly = CY + lr * Math.sin(theta);
+      chNodes += `<g class="vmap-chnode" data-ch="${c.id}" style="cursor:pointer" onclick="app.goChapter(${ci})">
+        <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="22" fill="${color}"/>
+        <text x="${cx.toFixed(1)}" y="${(cy + 5).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="800" fill="#fff">${c.number}</text>
+        <text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="14" font-weight="700" fill="${color}">${this.escHtml(c.title)}</text>
       </g>`;
     });
 
-    html += `</svg></div>`;
+    // centre node — the book itself
+    const bookTitle = this.book?.title || 'Kniha';
+    const words = bookTitle.split(' ');
+    const mid = Math.ceil(words.length / 2);
+    const l1 = this.escHtml(words.slice(0, mid).join(' ')), l2 = this.escHtml(words.slice(mid).join(' '));
+    const centre = `<g><circle cx="${CX}" cy="${CY}" r="58" fill="#873BE4"/>
+      <text x="${CX}" y="${CY - 4}" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">${l1}</text>
+      <text x="${CX}" y="${CY + 16}" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">${l2}</text></g>`;
 
-    // Legend
-    html += `<div style="display:flex;flex-wrap:wrap;gap:.3em .5em;padding:.4em .2em;font-size:.65rem;align-items:center">`;
-    mapData.chapters.forEach(ch => {
-      html += `<span class="vmap-ch-pill" data-ch="${ch.id}" onclick="app._vmapHighlightCh('${ch.id}')" style="display:inline-flex;align-items:center;gap:.2em;cursor:pointer;padding:.1em .4em;border-radius:10px;white-space:nowrap;border:1.5px solid transparent"><span style="width:7px;height:7px;border-radius:50%;background:${ch.color};display:inline-block;flex-shrink:0"></span>${ch.title}</span>`;
+    let html = `<div class="vmap-container">
+    <div class="vmap-toolbar" style="display:flex;gap:.5em;padding:.5em;flex-wrap:wrap;align-items:center;font-size:.72rem">
+      <button class="vmap-filter-btn active" data-filter="all" onclick="app._vmapFilter('all',this)">Vše (${allItems.length})</button>
+      <button class="vmap-filter-btn" data-filter="core" onclick="app._vmapFilter('core',this)">Základ (${coreCount})</button>
+      <button class="vmap-filter-btn" data-filter="unread" onclick="app._vmapFilter('unread',this)">Nepřečtené (${allItems.length - readCount})</button>
+      <button class="vmap-filter-btn" data-filter="read" onclick="app._vmapFilter('read',this)">Přečtené (${readCount})</button>
+      <span style="margin-left:auto;color:var(--grey50)">Kolečkem přiblížíš · tažením posouváš</span>
+    </div>
+    <div class="vmap-canvas" id="vmapCanvas" style="overflow:hidden;position:relative;border:1px solid var(--grey25);border-radius:var(--radius);touch-action:none;cursor:grab;background:#fff">
+      <svg id="vmapSvg" viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+      ${branches}${itemNodes}${chNodes}${centre}
+      </svg></div>`;
+
+    // Legend — chapter chips
+    html += `<div style="display:flex;flex-wrap:wrap;gap:.4em .6em;padding:.6em .2em;font-family:var(--font-ui);font-size:.72rem;align-items:center">`;
+    chapters.forEach((c, ci) => {
+      html += `<span class="vmap-ch-pill" data-ch="${c.id}" onclick="app._vmapHighlightCh('${c.id}')" style="display:inline-flex;align-items:center;gap:.3em;cursor:pointer;padding:.15em .5em;border-radius:var(--radius);white-space:nowrap;border:1px solid transparent"><span style="width:9px;height:9px;border-radius:50%;background:${chColor(ci)};display:inline-block;flex-shrink:0"></span>${this.escHtml(c.title)}</span>`;
     });
     html += `</div>`;
-    html += `<div style="font-size:.65rem;color:var(--text-3);padding:0 .3em .3em;display:flex;gap:.8em;flex-wrap:wrap">
-      <span>Postup: ${readCount}/${mapData.items.length} přečteno · ${coreRead}/${coreCount} základ</span>
-      <span>◉ základ · <span style="color:#10B981">◉</span> přečtené · <span style="color:#f59e0b">◉</span> uložené</span>
+    html += `<div style="font-family:var(--font-ui);font-size:.72rem;color:var(--grey50);padding:0 .3em .3em;display:flex;gap:1em;flex-wrap:wrap">
+      <span>Postup: ${readCount}/${allItems.length} přečteno · ${coreRead}/${coreCount} základ</span>
+      <span>◉ článek · <span style="color:var(--product)">◉</span> přečtené · <span style="color:#f59e0b">◉</span> uložené</span>
     </div></div>`;
     return html;
   }

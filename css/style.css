@@ -791,7 +791,12 @@ pre code { font-family: var(--font-mono); font-size: .82rem; line-height: 1.5; b
 .vmap-filter-btn { padding: .25em .6em; border-radius: 12px; border: 1.5px solid var(--border); font-size: .7rem; font-weight: 600; cursor: pointer; background: var(--bg); color: var(--text-2); transition: all .15s; }
 .vmap-filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
 .vmap-filter-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
-.vmap-canvas { height: 450px; }
+.vmap-canvas { height: 580px; }
+#vmapSvg text { font-family: var(--font-ui); }
+.vmap-node .vmap-label { pointer-events: none; transition: opacity .15s; }
+.vmap-node:hover .vmap-label { opacity: 1 !important; font-weight: 600; }
+.vmap-node:hover circle { stroke: var(--violet); stroke-width: 2.5; }
+.vmap-ch-pill:hover { border-color: var(--grey25) !important; background: var(--grey5); }
 .vmap-ch-pill { transition: border-color .15s; }
 .vmap-ch-pill:hover { background: var(--bg-card); }
 .map-ch-ring { position: relative; width: 36px; height: 36px; flex-shrink: 0; }
