@@ -58,7 +58,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Istok+Web:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-<link rel="stylesheet" href="css/style.css?v=3.19.0">
+<link rel="stylesheet" href="css/style.css?v=3.20.0">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 </head>
 <body>
@@ -208,14 +208,14 @@
     <span class="search-placeholder">Hledej…</span>
   </button>
   <nav class="topnav" aria-label="Hlavní menu">
-    <button class="topnav-item" data-view="home" onclick="app.switchView('home')">Procházet</button>
+    <button class="topnav-item" data-view="home" onclick="app.switchView('home')">Tvůj obsah</button>
     <button class="topnav-item" data-view="read" onclick="app.switchView('read')">Číst</button>
-    <button class="topnav-item" data-view="map" onclick="app.switchView('map')">Mapa</button>
     <button class="topnav-item" data-view="glossary" onclick="app.switchView('glossary')">Mise</button>
     <button class="topnav-item" data-view="quiz" onclick="app.switchView('quiz')">Kvízy</button>
   </nav>
   <div class="mission-bar-inline" id="missionBarInline" style="display:none"></div>
   <div class="topbar-right">
+    <button class="topnav-item topnav-item--right" data-view="map" onclick="app.switchView('map')">Přehled všeho</button>
     <button class="xp-badge" id="xpBadge" onclick="app.switchView('profile')"></button>
     <button class="topbar-icon" id="settingsBtn" onclick="app.toggleSettings()" aria-label="Nastavení">&#9881;</button>
     <button class="topbar-avatar" onclick="app.switchView('profile')" aria-label="Profil"></button>
