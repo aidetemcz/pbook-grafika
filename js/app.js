@@ -3550,18 +3550,29 @@ class PBook {
     const statsLine = `${prog.read} přečteno · ${prog.seen} zhlédnuto${readMin ? ' · ' + readMin + ' min čtení' : ''} · ${prog.total} celkem`;
 
     let html = `<div class="map-header fade-up">
-      <h2 class="map-title">Přehled všeho</h2>
+      <h2 class="map-title">Přehled obsahu a personalizace</h2>
       <div class="map-stats-line">${statsLine}</div>
       <div class="map-progress-bar"><div class="map-progress-fill" style="width:${prog.pct}%"></div></div>
       <div class="map-mode-toggle">
+        <button class="map-mode-btn ${mapMode === 'list' ? 'active' : ''}" onclick="app.setMapMode('list')">Podrobný přehled</button>
         <button class="map-mode-btn ${mapMode === 'visual' ? 'active' : ''}" onclick="app.setMapMode('visual')">Vizuální přehled</button>
-        <button class="map-mode-btn ${mapMode === 'list' ? 'active' : ''}" onclick="app.setMapMode('list')">Podrobný seznam</button>
         ${this._f('steering') ? `<button class="map-mode-btn ${mapMode === 'coverage' ? 'active' : ''}" onclick="app.setMapMode('coverage')">Personalizovat</button>` : ''}
         <button class="map-mode-btn ${mapMode === 'saved' ? 'active' : ''}" onclick="app.setMapMode('saved')">Uložené${this.user.savedBlocks.size ? ' (' + this.user.savedBlocks.size + ')' : ''}</button>
         <button class="map-mode-btn ${mapMode === 'notes' ? 'active' : ''}" onclick="app.setMapMode('notes')">Poznámky${this._getNoteCount() ? ' (' + this._getNoteCount() + ')' : ''}</button>
       </div>
-      <button class="map-reset-btn" onclick="app.resetAll()">Vynulovat postup</button>
     </div>`;
+
+    const resetBtn = `<button class="map-reset-btn" onclick="app.resetAll()">Vynulovat postup</button>`;
+    if (mapMode === 'list') {
+      html += `<div class="map-band"><div class="map-legend">
+        <span class="ml-item"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#059669"/></svg> Přečteno</span>
+        <span class="ml-item"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#E7E5E4"/></svg> Nepřečteno</span>
+        <span class="ml-item"><span style="font-size:.65rem;font-weight:700;color:var(--accent);background:var(--accent-bg);padding:.1em .3em;border-radius:3px">ZÁKLAD</span> Povinné čtení</span>
+        <span class="ml-item"><span style="font-size:.65rem">\u{1F3AE}</span> Mini-hra</span>
+      </div>${resetBtn}</div>`;
+    } else {
+      html += `<div class="map-band map-band--end">${resetBtn}</div>`;
+    }
 
     if (mapMode === 'coverage') {
       html += '<div id="coverageMapWrap" class="fade-up"><div style="padding:1.5em;color:var(--text-3);font-size:.8rem">Mapuji živou knihu…</div></div>';
@@ -3591,14 +3602,6 @@ class PBook {
       this._vmapInitZoom();
       return;
     }
-
-    // List mode legend
-    html += `<div class="map-legend">
-      <span class="ml-item"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#059669"/></svg> Přečteno</span>
-      <span class="ml-item"><svg width="10" height="10"><circle cx="5" cy="5" r="4" fill="#E7E5E4"/></svg> Nepřečteno</span>
-      <span class="ml-item"><span style="font-size:.65rem;font-weight:700;color:var(--accent);background:var(--accent-bg);padding:.1em .3em;border-radius:3px">ZÁKLAD</span> Povinné čtení</span>
-      <span class="ml-item"><span style="font-size:.65rem">\u{1F3AE}</span> Mini-hra</span>
-    </div>`;
 
     // Chapter reading order — which chapters should come before which
     const chapterPrereqs = {
