@@ -797,6 +797,35 @@ pre code { font-family: var(--font-mono); font-size: .82rem; line-height: 1.5; b
 .vmap-node:hover .vmap-label { opacity: 1 !important; font-weight: 600; }
 .vmap-node:hover circle { stroke: var(--violet); stroke-width: 2.5; }
 .vmap-ch-pill:hover { border-color: var(--grey25) !important; background: var(--grey5); }
+
+/* Vizuální přehled — stromová mind mapa (boxíky + spojnice) */
+.mindmap { max-width: 760px; margin: .4em auto 0; border-top: 1px solid var(--grey25); padding-top: 1.2em; text-align: left; }
+.mm-toolbar { display: flex; flex-wrap: wrap; gap: .5em; justify-content: center; margin-bottom: 1.4em; }
+.mm-filter { font-family: var(--font-ui); font-size: .78rem; font-weight: 600; padding: .35em .85em; border-radius: var(--radius); border: 1px solid var(--grey25); background: #fff; color: var(--text); cursor: pointer; transition: all var(--transition); }
+.mm-filter:hover { border-color: var(--grey50); }
+.mm-filter.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.mm-chapter-block { display: flex; align-items: center; gap: 40px; padding: 1.1em 0; border-bottom: 1px solid var(--grey25); }
+.mm-chapter-block:last-child { border-bottom: none; }
+.mm-chapter { position: relative; flex: 0 0 210px; display: flex; align-items: center; gap: .5em; background: #fff; border: 1px solid var(--grey25); border-radius: var(--radius); padding: .55em .7em; cursor: pointer; transition: border-color var(--transition); }
+.mm-chapter:hover { border-color: var(--violet); }
+.mm-chapter::after { content: ""; position: absolute; right: -20px; top: 50%; width: 20px; height: 2px; background: var(--grey25); }
+.mm-ch-num { flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; color: #fff; font-family: var(--font-ui); font-weight: 700; font-size: .8rem; display: grid; place-items: center; }
+.mm-ch-title { font-family: var(--font-ui); font-weight: 700; font-size: .82rem; color: var(--text); text-transform: uppercase; letter-spacing: .02em; line-height: 1.15; }
+.mm-articles { position: relative; display: flex; flex-direction: column; gap: 7px; flex: 1; min-width: 0; }
+.mm-articles::before { content: ""; position: absolute; left: -20px; top: 15px; bottom: 15px; width: 2px; background: var(--grey25); }
+.mm-article { position: relative; background: #fff; border: 1px solid var(--grey25); border-radius: var(--radius); padding: .4em .8em; font-family: var(--font-ui); font-size: .85rem; color: var(--grey50); cursor: pointer; transition: all var(--transition); }
+.mm-article::before { content: ""; position: absolute; left: -20px; top: 50%; width: 20px; height: 2px; background: var(--grey25); }
+.mm-article:hover { border-color: var(--violet); color: var(--text); }
+.mm-article.vn-core { font-weight: 600; color: var(--text); }
+.mm-article.vn-read { color: var(--text); border-color: #7dd3a8; }
+.mm-article.vn-read::after { content: " ✓"; color: var(--product); font-weight: 700; }
+.mm-article.vn-saved { border-color: #f59e0b; }
+.mm-foot { font-family: var(--font-ui); font-size: .75rem; color: var(--grey50); margin-top: 1.2em; text-align: center; }
+@media (max-width: 560px) {
+  .mm-chapter-block { flex-direction: column; align-items: stretch; gap: 12px; }
+  .mm-chapter { flex-basis: auto; }
+  .mm-chapter::after, .mm-articles::before, .mm-article::before { display: none; }
+}
 .vmap-ch-pill { transition: border-color .15s; }
 .vmap-ch-pill:hover { background: var(--bg-card); }
 .map-ch-ring { position: relative; width: 36px; height: 36px; flex-shrink: 0; }

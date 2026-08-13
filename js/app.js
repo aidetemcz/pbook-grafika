@@ -3949,102 +3949,45 @@ class PBook {
     const readSet = this.user.readBlocks;
     const savedSet = this.user.savedBlocks;
 
-    // Build the tree straight from the book — center → chapters → articles.
     const chapters = [];
     this.book.chapters.forEach((ch, ci) => {
       const items = (this.chapters[ci]?.blocks || []).filter(b => b.type === 'spine' || b.type === 'game');
-      if (items.length) chapters.push({ id: ch.id, title: ch.title, number: ch.number, items });
+      if (items.length) chapters.push({ id: ch.id, title: ch.title, number: ch.number, ci, items });
     });
     const N = chapters.length || 1;
     const allItems = chapters.flatMap(c => c.items);
     const readCount = allItems.filter(i => readSet.has(i.id)).length;
     const coreCount = allItems.filter(i => i.core).length;
     const coreRead = allItems.filter(i => i.core && readSet.has(i.id)).length;
-    // Per-chapter colour, kept in the brand's violet→pink hue range.
     const chColor = i => `hsl(${262 + Math.round(i * (78 / Math.max(N - 1, 1)))}, 58%, 54%)`;
 
-    const W = 1700, H = 1120, CX = W / 2, CY = H / 2;
-    const R1 = 250, R2 = 430;
-
-    let branches = '', chNodes = '', itemNodes = '';
-    chapters.forEach((c, ci) => {
-      const theta = -Math.PI / 2 + ci * (2 * Math.PI / N);
-      const cx = CX + R1 * Math.cos(theta), cy = CY + R1 * Math.sin(theta);
-      const color = chColor(ci);
-      // trunk: centre → chapter
-      const mx = CX + R1 * 0.5 * Math.cos(theta), my = CY + R1 * 0.5 * Math.sin(theta);
-      branches += `<path d="M ${CX.toFixed(1)} ${CY.toFixed(1)} Q ${mx.toFixed(1)} ${my.toFixed(1)} ${cx.toFixed(1)} ${cy.toFixed(1)}" fill="none" stroke="${color}" stroke-width="3" opacity="0.55"/>`;
-
-      // articles fanned inside the chapter's angular sector
-      const M = c.items.length;
-      const sector = (2 * Math.PI / N) * 0.82;
-      c.items.forEach((it, j) => {
-        const frac = M > 1 ? (j / (M - 1)) - 0.5 : 0;
-        const ang = theta + frac * sector;
-        const rr = R2 + (j % 2 ? 30 : 0);
-        const x = CX + rr * Math.cos(ang), y = CY + rr * Math.sin(ang);
+    let tree = '';
+    chapters.forEach((c, idx) => {
+      let arts = '';
+      c.items.forEach(it => {
         const isRead = readSet.has(it.id), isSaved = savedSet.has(it.id), isCore = it.core;
-        const rad = isCore ? 6.5 : 5;
-        let stroke = '';
-        if (isSaved) stroke = 'stroke="#f59e0b" stroke-width="2.5"';
-        else if (isRead) stroke = 'stroke="#059669" stroke-width="2"';
-        // branch: chapter → article
-        branches += `<line x1="${cx.toFixed(1)}" y1="${cy.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${color}" stroke-width="1.2" opacity="0.3"/>`;
-        // label points outward from the centre
-        const right = Math.cos(ang) >= 0;
-        const lx = x + (right ? rad + 6 : -(rad + 6));
-        const anchor = right ? 'start' : 'end';
-        const label = this.escHtml(it.title.length > 30 ? it.title.slice(0, 28) + '…' : it.title);
-        const cls = `vmap-node${isCore ? ' vn-core' : ''}${isRead ? ' vn-read' : ''}${isSaved ? ' vn-saved' : ''}`;
-        itemNodes += `<g class="${cls}" data-id="${it.id}" data-ch="${c.id}" style="cursor:pointer" onclick="app.openBlock('${it.id}')">
-          <title>${this.escHtml(it.title)}</title>
-          <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rad}" fill="${color}" opacity="${isRead ? 1 : isCore ? 0.9 : 0.6}" ${stroke}/>
-          <text class="vmap-label" x="${lx.toFixed(1)}" y="${(y + 3).toFixed(1)}" text-anchor="${anchor}" font-size="10" fill="#222222" opacity="${isRead || isCore ? 0.85 : 0.55}" font-weight="${isCore ? 600 : 400}">${label}</text>
-        </g>`;
+        const cls = `mm-article${isCore ? ' vn-core' : ''}${isRead ? ' vn-read' : ''}${isSaved ? ' vn-saved' : ''}`;
+        arts += `<div class="${cls}" data-ch="${c.id}" onclick="app.openBlock('${it.id}')" title="${this.escHtml(it.title)}">${this.escHtml(it.title)}</div>`;
       });
-
-      // chapter node + inward label
-      const lr = R1 - 42, lx = CX + lr * Math.cos(theta), ly = CY + lr * Math.sin(theta);
-      chNodes += `<g class="vmap-chnode" data-ch="${c.id}" style="cursor:pointer" onclick="app.goChapter(${ci})">
-        <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="22" fill="${color}"/>
-        <text x="${cx.toFixed(1)}" y="${(cy + 5).toFixed(1)}" text-anchor="middle" font-size="15" font-weight="800" fill="#fff">${c.number}</text>
-        <text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-size="14" font-weight="700" fill="${color}">${this.escHtml(c.title)}</text>
-      </g>`;
+      tree += `<div class="mm-chapter-block">
+        <div class="mm-chapter" onclick="app.goChapter(${c.ci})">
+          <span class="mm-ch-num" style="background:${chColor(idx)}">${c.number}</span>
+          <span class="mm-ch-title">${this.escHtml(c.title)}</span>
+        </div>
+        <div class="mm-articles">${arts}</div>
+      </div>`;
     });
 
-    // centre node — the book itself
-    const bookTitle = this.book?.title || 'Kniha';
-    const words = bookTitle.split(' ');
-    const mid = Math.ceil(words.length / 2);
-    const l1 = this.escHtml(words.slice(0, mid).join(' ')), l2 = this.escHtml(words.slice(mid).join(' '));
-    const centre = `<g><circle cx="${CX}" cy="${CY}" r="58" fill="#873BE4"/>
-      <text x="${CX}" y="${CY - 4}" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">${l1}</text>
-      <text x="${CX}" y="${CY + 16}" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">${l2}</text></g>`;
-
-    let html = `<div class="vmap-container">
-    <div class="vmap-toolbar" style="display:flex;gap:.5em;padding:.5em;flex-wrap:wrap;align-items:center;font-size:.72rem">
-      <button class="vmap-filter-btn active" data-filter="all" onclick="app._vmapFilter('all',this)">Vše (${allItems.length})</button>
-      <button class="vmap-filter-btn" data-filter="core" onclick="app._vmapFilter('core',this)">Základ (${coreCount})</button>
-      <button class="vmap-filter-btn" data-filter="unread" onclick="app._vmapFilter('unread',this)">Nepřečtené (${allItems.length - readCount})</button>
-      <button class="vmap-filter-btn" data-filter="read" onclick="app._vmapFilter('read',this)">Přečtené (${readCount})</button>
-      <span style="margin-left:auto;color:var(--grey50)">Kolečkem přiblížíš · tažením posouváš</span>
-    </div>
-    <div class="vmap-canvas" id="vmapCanvas" style="overflow:hidden;position:relative;border:1px solid var(--grey25);border-radius:var(--radius);touch-action:none;cursor:grab;background:#fff">
-      <svg id="vmapSvg" viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
-      ${branches}${itemNodes}${chNodes}${centre}
-      </svg></div>`;
-
-    // Legend — chapter chips
-    html += `<div style="display:flex;flex-wrap:wrap;gap:.4em .6em;padding:.6em .2em;font-family:var(--font-ui);font-size:.72rem;align-items:center">`;
-    chapters.forEach((c, ci) => {
-      html += `<span class="vmap-ch-pill" data-ch="${c.id}" onclick="app._vmapHighlightCh('${c.id}')" style="display:inline-flex;align-items:center;gap:.3em;cursor:pointer;padding:.15em .5em;border-radius:var(--radius);white-space:nowrap;border:1px solid transparent"><span style="width:9px;height:9px;border-radius:50%;background:${chColor(ci)};display:inline-block;flex-shrink:0"></span>${this.escHtml(c.title)}</span>`;
-    });
-    html += `</div>`;
-    html += `<div style="font-family:var(--font-ui);font-size:.72rem;color:var(--grey50);padding:0 .3em .3em;display:flex;gap:1em;flex-wrap:wrap">
-      <span>Postup: ${readCount}/${allItems.length} přečteno · ${coreRead}/${coreCount} základ</span>
-      <span>◉ článek · <span style="color:var(--product)">◉</span> přečtené · <span style="color:#f59e0b">◉</span> uložené</span>
-    </div></div>`;
-    return html;
+    return `<div class="mindmap">
+      <div class="mm-toolbar">
+        <button class="mm-filter active" data-filter="all" onclick="app._vmapFilter('all',this)">Vše (${allItems.length})</button>
+        <button class="mm-filter" data-filter="core" onclick="app._vmapFilter('core',this)">Základ (${coreCount})</button>
+        <button class="mm-filter" data-filter="unread" onclick="app._vmapFilter('unread',this)">Nepřečtené (${allItems.length - readCount})</button>
+        <button class="mm-filter" data-filter="read" onclick="app._vmapFilter('read',this)">Přečtené (${readCount})</button>
+      </div>
+      <div class="mm-tree">${tree}</div>
+      <div class="mm-foot">Postup: ${readCount}/${allItems.length} přečteno &middot; ${coreRead}/${coreCount} základ</div>
+    </div>`;
   }
 
   // Visual map interactions — zoom, pan, pinch (desktop + mobile)
@@ -4157,9 +4100,9 @@ class PBook {
   }
 
   _vmapFilter(filter, btn) {
-    document.querySelectorAll('.vmap-filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.vmap-filter-btn, .mm-filter').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    document.querySelectorAll('.vmap-node').forEach(g => {
+    document.querySelectorAll('.vmap-node, .mm-article').forEach(g => {
       const isCore = g.classList.contains('vn-core');
       const isRead = g.classList.contains('vn-read');
       let show = true;
